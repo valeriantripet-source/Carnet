@@ -185,11 +185,53 @@ main{flex:1;display:flex;flex-direction:column}
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:20;max-width:calc(100% - 24px);padding:10px 14px;border-radius:10px;background:var(--text);color:#000;font:600 14px/1.2 var(--sans);transform:translate(-50%,-160%);transition:transform .25s ease;pointer-events:none}
 .toast.show{transform:translate(-50%,0)}
 
+/* Animation d'ouverture : l'haltère s'assemble */
+#splash{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,3vh,22px);background:#000;cursor:pointer;animation:sp-out .32s ease-in 1.32s forwards}
+#splash.skip{animation:sp-skip .16s ease-in forwards}
+.sp-db{width:min(60vw,52vh,280px);height:auto;overflow:visible;animation:sp-press .42s cubic-bezier(.3,0,.2,1) .86s both}
+.sp-db rect{transform-box:fill-box;transform-origin:center}
+.sp-g{animation:sp-knock .2s ease-out .5s both}
+.sp-bar{fill:#969AA0;animation:sp-bar .34s cubic-bezier(.2,.8,.2,1) both}
+.sp-col{fill:#969AA0;animation:sp-col .2s cubic-bezier(.2,1.6,.4,1) .7s both}
+.sp-big,.sp-sm{fill:#ECEAE4}
+.sp-big.l{animation:sp-in-l .36s cubic-bezier(.2,1.3,.35,1) .2s both}
+.sp-big.r{animation:sp-in-r .36s cubic-bezier(.2,1.3,.35,1) .2s both}
+.sp-sm.l{animation:sp-in-l .34s cubic-bezier(.2,1.3,.35,1) .4s both}
+.sp-sm.r{animation:sp-in-r .34s cubic-bezier(.2,1.3,.35,1) .4s both}
+.sp-word{font:700 clamp(28px,9vw,40px)/1 var(--cond);color:#ECEAE4;animation:sp-word .38s cubic-bezier(.2,.8,.2,1) .86s both}
+@keyframes sp-bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes sp-in-l{from{transform:translateX(-24px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes sp-in-r{from{transform:translateX(24px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes sp-col{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes sp-knock{0%{transform:translateY(0)}35%{transform:translateY(1.4px)}100%{transform:translateY(0)}}
+@keyframes sp-press{from{transform:translateY(0)}to{transform:translateY(-8%)}}
+@keyframes sp-word{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sp-out{from{opacity:1}to{opacity:0;visibility:hidden}}
+@keyframes sp-skip{from{opacity:1}to{opacity:0;visibility:hidden}}
+@media (prefers-reduced-motion:reduce){
+  #splash *{animation:none!important}
+  #splash{animation:sp-out .3s ease-in .6s forwards}
+}
+
 @media (min-width:600px){:root{--pad:20px}}
 @media (prefers-reduced-motion:reduce){.chip.flash{animation:none}.toast{transition:none}}
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true">
+  <svg class="sp-db" viewBox="-40 -26 80 52" xmlns="http://www.w3.org/2000/svg">
+    <g class="sp-g">
+      <rect class="sp-bar" x="-34" y="-2.6" width="68" height="5.2" rx="2"/>
+      <rect class="sp-col" x="-19.4" y="-5.5" width="2.4" height="11" rx="1"/>
+      <rect class="sp-col" x="17" y="-5.5" width="2.4" height="11" rx="1"/>
+      <rect class="sp-big l" x="-27" y="-22" width="7" height="44" rx="2.4"/>
+      <rect class="sp-big r" x="20" y="-22" width="7" height="44" rx="2.4"/>
+      <rect class="sp-sm l" x="-33.5" y="-14" width="5" height="28" rx="2"/>
+      <rect class="sp-sm r" x="28.5" y="-14" width="5" height="28" rx="2"/>
+    </g>
+  </svg>
+  <span class="sp-word">Carnet</span>
+</div>
 <div id="app">
   <header class="topbar" id="topbar">
     <span class="mark">Carnet</span>
@@ -1046,6 +1088,17 @@ setInterval(() => {
   const r = document.getElementById('rest'); if (r) r.textContent = restText(state.draft);
   const el = document.getElementById('elapsed'); if (el) el.textContent = elapsed(state.draft.startedAt);
 }, 1000);
+
+/* ---------- Animation d'ouverture ---------- */
+{
+  const sp = document.getElementById('splash');
+  if (sp){
+    const done = () => { if (sp.isConnected) sp.remove(); };
+    sp.addEventListener('animationend', e => { if (e.target === sp) done(); });
+    sp.addEventListener('click', () => sp.classList.add('skip'));
+    setTimeout(done, 2400);
+  }
+}
 
 /* ---------- Démarrage ---------- */
 if (state.draft) setView('session');
