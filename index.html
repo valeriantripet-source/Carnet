@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Carnet de musculation</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000000;
+  --surface:#141517;
+  --raised:#222428;
+  --line:#303337;
+  --muted:#8F949A;
+  --text:#ECEAE4;
+  --soft:#C9C7C1;
+  --danger:#D47D6E;
+  --cond:"Barlow Condensed","Roboto Condensed","Arial Narrow",sans-serif;
+  --sans:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --pad:12px;
+  color-scheme:dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;background:var(--bg);scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;height:100%;background:var(--bg);color:var(--text);font:400 15px/1.4 var(--sans);-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+#app{min-height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.28;cursor:default}
+:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* En-têtes */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:12px;height:46px;padding:0 var(--pad);background:var(--bg);border-bottom:1px solid var(--line)}
+.topbar[hidden]{display:none}
+.mark{font:700 21px/1 var(--cond)}
+.tabs{display:flex;margin-left:auto;height:100%}
+.tab{position:relative;height:100%;padding:0 10px;color:var(--muted);font:600 15px/1 var(--sans)}
+.tab[aria-selected="true"]{color:var(--text)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--text)}
+main{flex:1;display:flex;flex-direction:column}
+.page{display:flex;flex-direction:column;gap:10px;padding:var(--pad)}
+.sub{flex:1;display:flex;flex-direction:column}
+.sub .page{padding-top:4px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:8px;height:46px;padding:0 var(--pad);background:var(--bg)}
+.bar .icon{margin-left:-8px;background:transparent}
+.bar-t{flex:1;min-width:0;font:600 18px/1.1 var(--cond);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-time{margin-left:6px;font:400 13px var(--sans);color:var(--muted)}
+
+/* Boutons */
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--raised);font:600 15px/1 var(--sans);text-align:center}
+.btn.primary{background:var(--text);border-color:var(--text);color:#000}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger);border-color:rgba(212,125,110,.45)}
+.btn.wide{width:100%}
+.btn.small{min-height:36px;padding:0 12px;font-size:14px}
+.icon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:46px;height:44px;border-radius:10px;background:var(--raised);font:500 30px/1 var(--sans)}
+.icon.go{background:var(--text);color:#000}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Formulaires */
+.field{display:flex;flex-direction:column;gap:6px}
+.flab{font-size:13px;color:var(--muted)}
+.inp{width:100%;height:46px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--raised);color:var(--text);font:600 20px/1 var(--cond)}
+.inp::placeholder{color:var(--muted);font-weight:500}
+.inp:focus{outline:none;border-color:var(--text)}
+.sel{position:relative;display:block}
+.sel select{width:100%;height:46px;padding:0 38px 0 12px;border-radius:10px;border:1px solid var(--line);background:var(--raised);color:var(--text);font:600 20px/1 var(--cond);-webkit-appearance:none;appearance:none}
+.sel::after{content:"";position:absolute;right:15px;top:50%;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:3px;border-radius:10px;background:var(--surface)}
+.seg button{height:36px;border-radius:8px;color:var(--muted);font:600 13px/1 var(--sans)}
+.seg button[aria-checked="true"]{background:var(--text);color:#000}
+.note{margin:0;font-size:13px;color:var(--muted)}
+
+/* Programmes */
+.resume{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:var(--raised)}
+.resume-k{margin:0;font-size:13px;color:var(--muted)}
+.resume-t{margin:2px 0 0;font:600 22px/1.1 var(--cond)}
+.resume-t span{margin-left:6px;font:400 14px var(--sans);color:var(--muted)}
+.resume-actions{display:flex;gap:8px}
+.resume-actions .primary{flex:1}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.prog{border-radius:14px;background:var(--surface);border:1px solid transparent}
+.prog.next{border-color:var(--line)}
+.prog-head{width:100%;min-height:64px;display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:12px;padding:10px 12px;text-align:left}
+.prog-letter{font:700 40px/1 var(--cond);color:var(--muted);text-align:center}
+.prog.next .prog-letter,.prog.open .prog-letter{color:var(--text)}
+.prog-main{display:flex;flex-direction:column;min-width:0}
+.prog-name{font:600 23px/1.1 var(--cond);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prog-sub{font-size:13px;color:var(--muted)}
+.tag{padding:5px 8px;border-radius:6px;border:1px solid var(--text);font:600 12px/1 var(--sans)}
+.prog-body{display:flex;flex-direction:column;gap:10px;padding:0 12px 12px}
+.exlist{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.exlist li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.exlist em{font-style:normal;color:var(--muted)}
+.tgt{font:600 17px/1.2 var(--cond);white-space:nowrap;font-variant-numeric:tabular-nums}
+.prog-actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+
+/* Séance */
+.session{flex:1;display:flex;flex-direction:column;gap:8px;padding:0 var(--pad) 10px}
+.session .bar{padding:0}
+.ex{display:flex;flex-direction:column;gap:2px}
+.ex-name{margin:0;font:700 clamp(23px,7.4vw,32px)/1.05 var(--cond)}
+.ex-tgt{margin:0;font-size:13px;color:var(--muted)}
+.ex-last{margin:0;font-size:13px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.controls{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.steppers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stp{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;height:clamp(62px,15vh,92px);border-radius:12px;background:var(--surface);overflow:hidden}
+.stp:focus-within{box-shadow:inset 0 0 0 2px var(--text)}
+.stp-b{background:var(--raised);font:400 28px/1 var(--sans)}
+.stp-b:active{background:var(--line)}
+.stp-v{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;cursor:text}
+.stp-v input{width:100%;padding:0;border:0;background:none;color:var(--text);text-align:center;font:600 clamp(31px,9.6vw,54px)/1 var(--cond);font-variant-numeric:tabular-nums}
+.stp-v input:focus{outline:none}
+.stp-v span{margin-top:2px;font-size:11px;color:var(--muted)}
+.validate{width:100%;min-height:clamp(48px,11vh,62px);font-size:16px}
+.sets{display:flex;align-items:center;gap:6px;min-height:34px;overflow-x:auto;scrollbar-width:none}
+.sets::-webkit-scrollbar{display:none}
+.chip{flex:none;height:32px;padding:0 11px;border-radius:999px;background:var(--raised);font:600 17px/1 var(--cond);font-variant-numeric:tabular-nums}
+.chip.warn{background:transparent;border:1px solid var(--danger);color:var(--danger);font:600 13px/1 var(--sans)}
+.chip.flash{animation:flash .7s ease-out}
+@keyframes flash{from{background:var(--text);color:#000}to{background:var(--raised);color:var(--text)}}
+.sets-empty{font-size:13px;color:var(--muted)}
+.exnav{display:flex;align-items:center;gap:8px}
+.rest{flex:1;min-width:0;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pos{margin-right:2px;font:600 17px/1 var(--cond);color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Éditeur de programme */
+.elist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.erow{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:12px;background:var(--surface)}
+.erow-top{display:flex;align-items:center;gap:6px}
+.erow-name{flex:1;min-width:0;font:600 19px/1.15 var(--cond)}
+.mini{flex:none;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:9px;background:var(--raised);font:500 18px/1 var(--sans)}
+.erow-stp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mstp{display:grid;grid-template-columns:40px 1fr 40px;height:46px;border-radius:10px;background:var(--raised);overflow:hidden}
+.mstp button{font:400 22px/1 var(--sans)}
+.mstp button:active{background:var(--line)}
+.mstp output{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);font:600 21px/1 var(--cond);font-variant-numeric:tabular-nums}
+.mstp output small{margin-top:1px;font:500 10px/1.2 var(--sans);color:var(--muted)}
+.pg{margin:12px 0 2px;font:600 13px/1 var(--sans);color:var(--muted)}
+.pick{width:100%;min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px;border-bottom:1px solid var(--line);text-align:left;font-size:15px}
+.pick small{flex:none;font-size:12px;color:var(--muted)}
+
+/* Progrès */
+.chart{position:relative;height:clamp(150px,32vh,250px);margin:0;border-radius:14px;background:var(--surface);overflow:hidden}
+.chart svg{display:block}
+.chart .g{stroke:var(--line);stroke-width:1}
+.chart .ln{fill:none;stroke:var(--text);stroke-width:2.25;stroke-linejoin:round;stroke-linecap:round}
+.chart .d{fill:var(--surface);stroke:var(--text);stroke-width:1.75}
+.chart .dl{fill:var(--text)}
+.chart text{font:500 11px var(--sans);fill:var(--muted)}
+.chart .vl{font:600 16px var(--cond);fill:var(--text)}
+.cap{margin:-2px 0 0;font-size:12px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{min-width:0;padding:8px 10px;border-radius:12px;background:var(--surface)}
+.stat-k{display:block;font-size:12px;color:var(--muted)}
+.stat-v{display:block;font:600 23px/1.1 var(--cond);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.stat-v small{margin-left:2px;font:500 12px var(--sans);color:var(--muted)}
+.h2{margin:10px 0 0;font:600 21px/1 var(--cond)}
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.hrow{border-radius:12px;background:var(--surface)}
+.hhead{width:100%;display:grid;grid-template-columns:62px 1fr auto;align-items:baseline;gap:10px;padding:12px;text-align:left}
+.hdate{font-size:13px;color:var(--muted)}
+.hprog{min-width:0;font:600 19px/1.1 var(--cond);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hmeta{font-size:13px;color:var(--muted);white-space:nowrap}
+.hbody{display:flex;flex-direction:column;gap:6px;padding:0 12px 12px}
+.hex{display:flex;flex-direction:column;padding-top:6px;border-top:1px solid var(--line);font-size:14px}
+.hsets{font:500 17px/1.3 var(--cond);color:var(--soft);word-spacing:.35em;font-variant-numeric:tabular-nums}
+.hbody .btn{margin-top:4px}
+.empty{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:16px 4px 4px}
+.empty-t{margin:0;font:600 26px/1.1 var(--cond)}
+.empty p{margin:0;color:var(--muted)}
+
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:20;max-width:calc(100% - 24px);padding:10px 14px;border-radius:10px;background:var(--text);color:#000;font:600 14px/1.2 var(--sans);transform:translate(-50%,-160%);transition:transform .25s ease;pointer-events:none}
+.toast.show{transform:translate(-50%,0)}
+
+@media (min-width:600px){:root{--pad:20px}}
+@media (prefers-reduced-motion:reduce){.chip.flash{animation:none}.toast{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar" id="topbar">
+    <span class="mark">Carnet</span>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-action="tab" data-id="programs">Programmes</button>
+      <button class="tab" role="tab" data-action="tab" data-id="progress">Progrès</button>
+    </nav>
+  </header>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="import-file" accept=".json,application/json" hidden>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Catalogue d'exercices ---------- */
+const GROUPS = ['Pectoraux', 'Dos', 'Épaules', 'Bras', 'Jambes', 'Abdos', 'Autre'];
+const PH = 'kg par haltère';
+const EX = {
+  dc:     {g:'Pectoraux', name:'Développé couché', step:2.5, start:60},
+  dib:    {g:'Pectoraux', name:'Développé incliné barre', step:2.5, start:50},
+  dch:    {g:'Pectoraux', name:'Développé couché haltères', step:2, start:30, unit:PH},
+  dih:    {g:'Pectoraux', name:'Développé incliné haltères', step:2, start:26, unit:PH},
+  dd:     {g:'Pectoraux', name:'Développé décliné', step:2.5, start:60},
+  ecp:    {g:'Pectoraux', name:'Écarté poulie vis-à-vis', step:2.5, start:15},
+  ech:    {g:'Pectoraux', name:'Écarté haltères', step:2, start:14, unit:PH},
+  pec:    {g:'Pectoraux', name:'Pec deck', step:2.5, start:40},
+  pompes: {g:'Pectoraux', name:'Pompes', step:2.5, start:0, bw:true},
+  dips:   {g:'Pectoraux', name:'Dips', step:2.5, start:0, bw:true},
+  trac:   {g:'Dos', name:'Tractions', step:2.5, start:0, bw:true},
+  tsup:   {g:'Dos', name:'Tractions supination', step:2.5, start:0, bw:true},
+  tv:     {g:'Dos', name:'Tirage vertical prise large', step:2.5, start:55},
+  tvs:    {g:'Dos', name:'Tirage vertical prise serrée', step:2.5, start:55},
+  rb:     {g:'Dos', name:'Rowing barre', step:2.5, start:60},
+  rh:     {g:'Dos', name:'Rowing haltère un bras', step:2, start:30},
+  rpb:    {g:'Dos', name:'Rowing poulie basse', step:2.5, start:55},
+  rt:     {g:'Dos', name:'Rowing T-bar', step:2.5, start:40},
+  pop:    {g:'Dos', name:'Pull-over poulie', step:2.5, start:25},
+  sdt:    {g:'Dos', name:'Soulevé de terre', step:2.5, start:100},
+  shrug:  {g:'Dos', name:'Shrugs', step:2.5, start:60},
+  dm:     {g:'Épaules', name:'Développé militaire debout', step:2.5, start:40},
+  dha:    {g:'Épaules', name:'Développé haltères assis', step:2, start:22, unit:PH},
+  el:     {g:'Épaules', name:'Élévations latérales', step:1, start:10, unit:PH},
+  elp:    {g:'Épaules', name:'Élévations latérales poulie', step:1, start:5},
+  ois:    {g:'Épaules', name:'Oiseau haltères', step:1, start:8, unit:PH},
+  fp:     {g:'Épaules', name:'Face pull', step:2.5, start:20},
+  rmen:   {g:'Épaules', name:'Rowing menton', step:2.5, start:30},
+  curl:   {g:'Bras', name:'Curl barre EZ', step:2.5, start:30},
+  curlh:  {g:'Bras', name:'Curl haltères', step:1, start:14, unit:PH},
+  ci:     {g:'Bras', name:'Curl incliné haltères', step:1, start:12, unit:PH},
+  cm:     {g:'Bras', name:'Curl marteau', step:1, start:14, unit:PH},
+  cp:     {g:'Bras', name:'Curl pupitre', step:2.5, start:25},
+  ext:    {g:'Bras', name:'Extension triceps à la poulie', step:2.5, start:25},
+  baf:    {g:'Bras', name:'Barre au front', step:2.5, start:30},
+  enh:    {g:'Bras', name:'Extension nuque haltère', step:2, start:20},
+  dcps:   {g:'Bras', name:'Développé couché prise serrée', step:2.5, start:50},
+  sq:     {g:'Jambes', name:'Squat', step:2.5, start:80},
+  gob:    {g:'Jambes', name:'Goblet squat', step:2, start:24},
+  presse: {g:'Jambes', name:'Presse à cuisses', step:5, start:120},
+  fb:     {g:'Jambes', name:'Fentes bulgares', step:2, start:16, unit:PH},
+  sdtr:   {g:'Jambes', name:'Soulevé de terre roumain', step:2.5, start:80},
+  lc:     {g:'Jambes', name:'Leg curl', step:2.5, start:40},
+  lext:   {g:'Jambes', name:'Leg extension', step:2.5, start:40},
+  ht:     {g:'Jambes', name:'Hip thrust', step:5, start:80},
+  mol:    {g:'Jambes', name:'Mollets debout', step:2.5, start:60},
+  rjs:    {g:'Abdos', name:'Relevés de jambes suspendu', step:1, start:0, bw:true},
+  crp:    {g:'Abdos', name:'Crunch poulie', step:2.5, start:30},
+  roue:   {g:'Abdos', name:'Roue abdominale', step:1, start:0, bw:true},
+};
+
+const DEFAULT_PROGRAMS = [
+  {id:'A', name:'Force', desc:'Charges lourdes, 2 à 3 min de repos entre les séries.', items:[
+    {ex:'dc', sets:5, reps:5},
+    {ex:'trac', sets:5, reps:5, hint:'lestées'},
+    {ex:'dm', sets:4, reps:6},
+    {ex:'rb', sets:4, reps:6},
+    {ex:'dips', sets:3, reps:8, hint:'lestés'},
+  ]},
+  {id:'B', name:'Volume', desc:'Hypertrophie, 60 à 90 s de repos entre les séries.', items:[
+    {ex:'dih', sets:4, reps:10},
+    {ex:'tv', sets:4, reps:10},
+    {ex:'el', sets:4, reps:15},
+    {ex:'rh', sets:3, reps:12},
+    {ex:'fp', sets:3, reps:15},
+    {ex:'ext', sets:3, reps:12},
+    {ex:'ci', sets:3, reps:12},
+  ]},
+  {id:'C', name:'Complet', desc:'Haut du corps et jambes légères, 90 s de repos entre les séries.', items:[
+    {ex:'dch', sets:4, reps:8},
+    {ex:'trac', sets:4, reps:8, label:'max'},
+    {ex:'sdtr', sets:3, reps:8},
+    {ex:'dha', sets:3, reps:10},
+    {ex:'rpb', sets:3, reps:12},
+    {ex:'gob', sets:3, reps:10},
+    {ex:'rjs', sets:3, reps:12},
+  ]},
+];
+
+const METRICS = [
+  {id:'e1rm', short:'1RM est.', unit:'kg', cap:'1RM estimé à partir de ta meilleure série de chaque séance (formule d’Epley).'},
+  {id:'max',  short:'Charge', unit:'kg', cap:'Charge la plus lourde soulevée à chaque séance.'},
+  {id:'vol',  short:'Volume', unit:'kg', cap:'Charge × répétitions, toutes séries confondues.'},
+  {id:'reps', short:'Reps', unit:'reps', cap:'Plus grand nombre de répétitions en une série.'},
+];
+
+/* ---------- Stockage local ---------- */
+const K = {sessions:'carnet.v1.sessions', draft:'carnet.v1.draft', programs:'carnet.v1.programs', customEx:'carnet.v1.customEx'};
+const LS = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ toast('Stockage plein ou indisponible'); } },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} },
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+const validSession = s => !!s && typeof s.id === 'string' && typeof s.date === 'string' && Array.isArray(s.items)
+  && s.items.every(it => it && typeof it.ex === 'string' && Array.isArray(it.sets));
+const validProgram = p => !!p && typeof p.id === 'string' && typeof p.name === 'string' && Array.isArray(p.items)
+  && p.items.every(it => it && typeof it.ex === 'string' && it.sets > 0 && it.reps > 0);
+
+const state = {
+  view:'programs', openProgram:null, draft:null,
+  programs:null, customEx:{}, sessions:[],
+  progEx:null, metric:'e1rm', openSession:null, confirm:null, flash:null,
+  edit:null, pickQuery:'', newEx:null, scrollEnd:false,
+};
+{
+  const ps = LS.get(K.programs, null);
+  state.programs = Array.isArray(ps) ? ps.filter(validProgram) : clone(DEFAULT_PROGRAMS);
+  if (!Array.isArray(ps)) LS.set(K.programs, state.programs);
+  const cx = LS.get(K.customEx, {});
+  state.customEx = cx && typeof cx === 'object' && !Array.isArray(cx) ? cx : {};
+  state.sessions = (LS.get(K.sessions, []) || []).filter(validSession);
+}
+
+const prog = id => state.programs.find(p => p.id === id);
+const exInfo = id => EX[id] || state.customEx[id] || null;
+const persist = () => LS.set(K.sessions, state.sessions);
+const persistPrograms = () => LS.set(K.programs, state.programs);
+const persistCustomEx = () => LS.set(K.customEx, state.customEx);
+const saveDraft = () => { if (state.draft) LS.set(K.draft, state.draft); };
+
+function loadDraft(){
+  const d = LS.get(K.draft, null);
+  if (!d || !Array.isArray(d.items)) return null;
+  if (!d.plan){ const p = prog(d.program); if (!p) return null; d.plan = {name:p.name, items:clone(p.items)}; }
+  if (!Array.isArray(d.plan.items) || d.plan.items.length !== d.items.length) return null;
+  d.inputs = d.inputs || {};
+  return d;
+}
+state.draft = loadDraft();
+
+/* ---------- Utilitaires ---------- */
+const h = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const round2 = n => Math.round(n * 100) / 100;
+const parseNum = v => parseFloat(String(v).replace(',', '.').replace(/[^\d.\-]/g, ''));
+const fmt = n => Number(n).toLocaleString('fr-FR', {maximumFractionDigits:2});
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const e1rm = (w, r) => r <= 0 ? 0 : (r === 1 ? w : w * (1 + r / 30));
+const sorted = () => state.sessions.slice().sort((a, b) => a.date.localeCompare(b.date));
+const letter = name => (String(name).trim().charAt(0) || '?').toUpperCase();
+
+function exName(id){
+  const e = exInfo(id); if (e) return e.name;
+  for (const s of state.sessions) for (const it of s.items) if (it.ex === id && it.name) return it.name;
+  return 'Exercice';
+}
+function fmtSet(s, bw){
+  if (bw) return s.w > 0 ? `+${fmt(s.w)}×${s.r}` : `${s.r} reps`;
+  return `${fmt(s.w)}×${s.r}`;
+}
+function lastLine(sets, bw){
+  const groups = [];
+  for (const s of sets){
+    const g = groups[groups.length - 1];
+    if (g && g.w === s.w) g.r.push(s.r); else groups.push({w:s.w, r:[s.r]});
+  }
+  return groups.map(g => (bw && g.w === 0 ? 'PDC' : (bw ? '+' : '') + fmt(g.w) + ' kg') + ' : ' + g.r.join(', ')).join(' / ');
+}
+function lastPerf(exId, excludeId){
+  const list = sorted();
+  for (let i = list.length - 1; i >= 0; i--){
+    const s = list[i];
+    if (s.id === excludeId) continue;
+    const sets = s.items.filter(it => it.ex === exId).flatMap(it => it.sets);
+    if (sets.length) return sets;
+  }
+  return null;
+}
+function daysAgo(t){
+  const a = new Date(t); a.setHours(0,0,0,0);
+  const b = new Date(); b.setHours(0,0,0,0);
+  return Math.round((b - a) / 86400000);
+}
+function lastDoneTime(pid){
+  let t = -Infinity;
+  for (const s of state.sessions) if (s.program === pid) t = Math.max(t, Date.parse(s.date));
+  return t;
+}
+function lastDoneLabel(pid){
+  const t = lastDoneTime(pid);
+  if (t === -Infinity) return 'Jamais faite';
+  const d = daysAgo(t);
+  if (d <= 0) return 'Faite aujourd’hui';
+  if (d === 1) return 'Faite hier';
+  return `Faite il y a ${d} jours`;
+}
+function suggestNext(){
+  let best = null, bt = Infinity;
+  for (const p of state.programs){ const t = lastDoneTime(p.id); if (t < bt){ bt = t; best = p.id; } }
+  return best;
+}
+function elapsed(start){
+  const m = Math.max(0, Math.floor((Date.now() - start) / 60000));
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
+}
+function restText(d){
+  if (!d || !d.lastSetAt) return '';
+  const s = Math.floor((Date.now() - d.lastSetAt) / 1000);
+  if (s > 900) return '';
+  return `Repos ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+const dateShort = iso => new Date(iso).toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
+const dateTiny = iso => new Date(iso).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+const volFmt = v => v >= 1000 ? `${fmt(Math.round(v / 100) / 10)} t` : `${fmt(Math.round(v))} kg`;
+
+/* ---------- Toast, confirmations, navigation ---------- */
+let toastT, confirmT;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function arm(key){
+  state.confirm = key;
+  clearTimeout(confirmT);
+  confirmT = setTimeout(() => { if (state.confirm === key){ state.confirm = null; render(); } }, 3500);
+}
+
+// Le bouton retour d'Android revient à l'écran parent au lieu de fermer l'appli
+try { history.scrollRestoration = 'manual'; } catch(e){}
+const PARENT = {session:'programs', editor:'programs', picker:'editor', newex:'picker'};
+let guarded = false, ignorePop = false;
+function setView(v){
+  state.view = v;
+  if (PARENT[v] && !guarded){ try { history.pushState({carnet:1}, ''); guarded = true; } catch(e){} }
+  else if (!PARENT[v] && guarded){ guarded = false; ignorePop = true; try { history.back(); } catch(e){ ignorePop = false; } }
+}
+window.addEventListener('popstate', () => {
+  if (ignorePop){ ignorePop = false; return; }
+  guarded = false;
+  const parent = PARENT[state.view];
+  if (!parent) return;
+  if (state.view === 'editor') state.edit = null;
+  if (state.view === 'newex') state.newEx = null;
+  state.confirm = null;
+  setView(parent);
+  render();
+});
+
+/* ---------- Vue : programmes ---------- */
+function viewPrograms(){
+  const d = state.draft;
+  let out = '<div class="page">';
+  if (d){
+    const n = d.items.reduce((a, it) => a + it.sets.length, 0);
+    out += `<section class="resume" aria-label="Séance en cours">
+      <div><p class="resume-k">Séance en cours</p>
+      <p class="resume-t">${h(d.plan.name)}<span>${n} série${n > 1 ? 's' : ''}, ${elapsed(d.startedAt)}</span></p></div>
+      <div class="resume-actions">
+        <button class="btn primary" data-action="resume">Reprendre</button>
+        <button class="btn ghost ${state.confirm === 'abandon' ? 'danger' : ''}" data-action="abandon">${state.confirm === 'abandon' ? 'Confirmer' : 'Abandonner'}</button>
+      </div></section>`;
+  }
+  const next = d ? null : suggestNext();
+  if (state.programs.length){
+    out += '<ul class="plist">';
+    for (const p of state.programs){
+      const open = state.openProgram === p.id;
+      out += `<li class="prog ${open ? 'open' : ''} ${next === p.id ? 'next' : ''}">
+        <button class="prog-head" data-action="toggle-prog" data-id="${h(p.id)}" aria-expanded="${open}">
+          <span class="prog-letter" aria-hidden="true">${h(letter(p.name))}</span>
+          <span class="prog-main"><span class="prog-name">${h(p.name)}</span><span class="prog-sub">${lastDoneLabel(p.id)}</span></span>
+          ${next === p.id ? '<span class="tag">Prochaine</span>' : '<span></span>'}
+        </button>`;
+      if (open){
+        out += '<div class="prog-body">' + (p.desc ? `<p class="note">${h(p.desc)}</p>` : '') + '<ol class="exlist">' +
+          p.items.map(it => `<li><span>${h(exName(it.ex))}${it.hint ? ` <em>${h(it.hint)}</em>` : ''}</span><span class="tgt">${it.sets} × ${h(it.label || it.reps)}</span></li>`).join('') +
+          '</ol>' +
+          (d ? '<p class="note">Termine ou abandonne la séance en cours pour en commencer une autre.</p>' : '') +
+          `<div class="prog-actions">${d ? '<span></span>' : `<button class="btn primary" data-action="start" data-id="${h(p.id)}">Commencer</button>`}
+            <button class="btn ghost" data-action="edit-prog" data-id="${h(p.id)}">Modifier</button></div>` +
+          '</div>';
+      }
+      out += '</li>';
+    }
+    out += '</ul>';
+  } else {
+    out += '<div class="empty"><p class="empty-t">Aucun programme</p><p>Crée ton premier programme ou réinstalle ceux d’origine.</p></div>';
+  }
+  out += '<button class="btn ghost wide" data-action="new-prog">Créer un programme</button>';
+  if (DEFAULT_PROGRAMS.some(dp => !prog(dp.id))){
+    out += '<button class="btn ghost wide" data-action="restore-defaults">Réinstaller les programmes d’origine</button>';
+  }
+  return out + '</div>';
+}
+
+/* ---------- Vue : séance ---------- */
+function inputsFor(i){
+  const d = state.draft;
+  if (d.inputs[i]) return d.inputs[i];
+  const it = d.plan.items[i], ex = exInfo(it.ex) || {step:2.5, start:0}, cur = d.items[i];
+  let w = ex.start, r = it.reps;
+  if (cur.sets.length){ const l = cur.sets[cur.sets.length - 1]; w = l.w; r = l.r; }
+  else { const lp = lastPerf(it.ex, d.id); if (lp && lp.length){ w = lp[0].w; r = lp[0].r; } }
+  return (d.inputs[i] = {w, r});
+}
+function stepper(f, val, label, step, what){
+  return `<div class="stp">
+    <button class="stp-b" data-action="dec" data-f="${f}" data-step="${step}" aria-label="Diminuer ${what}">−</button>
+    <label class="stp-v"><input id="in-${f}" data-f="${f}" inputmode="${f === 'w' ? 'decimal' : 'numeric'}" enterkeyhint="done" autocomplete="off" value="${fmt(val)}" aria-label="${h(label)}"><span>${h(label)}</span></label>
+    <button class="stp-b" data-action="inc" data-f="${f}" data-step="${step}" aria-label="Augmenter ${what}">+</button>
+  </div>`;
+}
+function viewSession(){
+  const d = state.draft, items = d.plan.items, i = d.idx;
+  const it = items[i], ex = exInfo(it.ex) || {name:exName(it.ex), step:2.5, start:0}, cur = d.items[i];
+  const inp = inputsFor(i);
+  const last = lastPerf(it.ex, d.id);
+  const reached = cur.sets.length >= it.sets;
+  const isLast = i === items.length - 1;
+  const allDone = d.items.every((x, k) => x.sets.length >= items[k].sets);
+  const tgt = [`Objectif ${it.sets} × ${it.label || it.reps}`, it.hint, ex.unit].filter(Boolean).join(', ');
+  return `<div class="session">
+    <header class="bar">
+      <button class="icon" data-action="leave" aria-label="Retour aux programmes">‹</button>
+      <span class="bar-t">${h(d.plan.name)}<span class="bar-time" id="elapsed">${elapsed(d.startedAt)}</span></span>
+      <button class="btn small ${state.confirm === 'finish' || allDone ? 'primary' : ''}" data-action="finish">${state.confirm === 'finish' ? 'Confirmer' : 'Terminer'}</button>
+    </header>
+    <div class="ex">
+      <h1 class="ex-name">${h(ex.name)}</h1>
+      <p class="ex-tgt">${h(tgt)}</p>
+      <p class="ex-last">${last ? 'Dernière fois, ' + h(lastLine(last, ex.bw)) : 'Première fois sur cet exercice'}</p>
+    </div>
+    <div class="controls">
+      <div class="steppers">
+        ${stepper('w', inp.w, ex.bw ? 'kg de lest' : 'kg', ex.step, 'la charge')}
+        ${stepper('r', inp.r, 'reps', 1, 'les répétitions')}
+      </div>
+      <button class="btn primary validate" data-action="add-set">Valider la série ${cur.sets.length + 1}</button>
+      <div class="sets" aria-label="Séries validées">${cur.sets.length
+        ? cur.sets.map((s, k) => `<button class="chip ${state.confirm === 'rm' + k ? 'warn' : ''} ${state.flash === k ? 'flash' : ''}" data-action="rm-set" data-k="${k}" aria-label="Série ${k + 1}, ${h(fmtSet(s, ex.bw))}, toucher pour retirer">${state.confirm === 'rm' + k ? 'Retirer ?' : h(fmtSet(s, ex.bw))}</button>`).join('')
+        : '<span class="sets-empty">Aucune série pour l’instant</span>'}</div>
+      <nav class="exnav" aria-label="Exercices">
+        <span class="rest" id="rest">${restText(d)}</span>
+        <span class="pos">${i + 1} / ${items.length}</span>
+        <button class="icon" data-action="prev" ${i === 0 ? 'disabled' : ''} aria-label="Exercice précédent">‹</button>
+        <button class="icon ${reached && !isLast ? 'go' : ''}" data-action="next" ${isLast ? 'disabled' : ''} aria-label="Exercice suivant">›</button>
+      </nav>
+    </div>
+  </div>`;
+}
+
+/* ---------- Vue : éditeur de programme ---------- */
+function mstp(f, k, val, label){
+  return `<div class="mstp">
+    <button data-action="ed-dec" data-f="${f}" data-k="${k}" aria-label="Moins de ${label}">−</button>
+    <output>${val}<small>${label}</small></output>
+    <button data-action="ed-inc" data-f="${f}" data-k="${k}" aria-label="Plus de ${label}">+</button>
+  </div>`;
+}
+function viewEditor(){
+  const e = state.edit, n = e.items.length;
+  return `<div class="sub">
+    <header class="bar">
+      <button class="icon" data-action="ed-cancel" aria-label="Annuler et revenir">‹</button>
+      <span class="bar-t">${e.isNew ? 'Nouveau programme' : 'Modifier le programme'}</span>
+      <button class="btn small primary" data-action="ed-save">Enregistrer</button>
+    </header>
+    <div class="page">
+      <label class="field"><span class="flab">Nom du programme</span>
+        <input class="inp" id="ed-name" value="${h(e.name)}" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="Ex. Pecs et dos"></label>
+      <span class="flab">Exercices${n ? ` (${n})` : ''}</span>
+      ${n ? '<ol class="elist">' + e.items.map((it, k) => `<li class="erow">
+        <div class="erow-top"><span class="erow-name">${h(exName(it.ex))}</span>
+          <button class="mini" data-action="ed-up" data-k="${k}" ${k === 0 ? 'disabled' : ''} aria-label="Monter">↑</button>
+          <button class="mini" data-action="ed-down" data-k="${k}" ${k === n - 1 ? 'disabled' : ''} aria-label="Descendre">↓</button>
+          <button class="mini" data-action="ed-rm" data-k="${k}" aria-label="Retirer ${h(exName(it.ex))}">×</button></div>
+        <div class="erow-stp">${mstp('sets', k, it.sets, 'séries')}${mstp('reps', k, it.reps, 'reps')}</div>
+      </li>`).join('') + '</ol>' : '<p class="note">Aucun exercice pour l’instant.</p>'}
+      <button class="btn wide" data-action="ed-add">Ajouter un exercice</button>
+      ${e.isNew ? '' : `<button class="btn ghost danger wide" data-action="ed-delete">${state.confirm === 'ed-delete' ? 'Confirmer la suppression' : 'Supprimer le programme'}</button>`}
+    </div>
+  </div>`;
+}
+
+/* ---------- Vue : choix d'un exercice ---------- */
+function allExEntries(){
+  return Object.entries(EX).map(([id, e]) => ({id, ...e}))
+    .concat(Object.entries(state.customEx).map(([id, e]) => ({id, ...e})));
+}
+function pickList(){
+  const q = norm(state.pickQuery);
+  const inProg = new Set((state.edit ? state.edit.items : []).map(i => i.ex));
+  const all = allExEntries();
+  let out = '';
+  for (const g of GROUPS){
+    const list = all.filter(e => (e.g || 'Autre') === g && (!q || norm(e.name).includes(q)));
+    if (!list.length) continue;
+    out += `<h3 class="pg">${g}</h3>` + list.map(e => `<button class="pick" data-action="pk-add" data-id="${h(e.id)}"><span>${h(e.name)}</span>${inProg.has(e.id) ? '<small>déjà ajouté</small>' : ''}</button>`).join('');
+  }
+  return out || '<p class="note">Aucun exercice ne correspond. Tu peux le créer.</p>';
+}
+function viewPicker(){
+  return `<div class="sub">
+    <header class="bar">
+      <button class="icon" data-action="pk-back" aria-label="Retour au programme">‹</button>
+      <span class="bar-t">Ajouter un exercice</span>
+    </header>
+    <div class="page">
+      <input class="inp" id="pk-q" type="search" placeholder="Rechercher" value="${h(state.pickQuery)}" autocomplete="off" enterkeyhint="search" aria-label="Rechercher un exercice">
+      <button class="btn ghost wide" data-action="pk-new">Créer un exercice</button>
+      <div id="pk-list">${pickList()}</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Vue : nouvel exercice ---------- */
+function viewNewEx(){
+  const n = state.newEx;
+  return `<div class="sub">
+    <header class="bar">
+      <button class="icon" data-action="nx-back" aria-label="Retour à la liste">‹</button>
+      <span class="bar-t">Nouvel exercice</span>
+      <button class="btn small primary" data-action="nx-save">Créer</button>
+    </header>
+    <div class="page">
+      <label class="field"><span class="flab">Nom</span>
+        <input class="inp" id="nx-name" value="${h(n.name)}" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="Ex. Développé Smith"></label>
+      <label class="field"><span class="flab">Groupe musculaire</span>
+        <span class="sel"><select id="nx-group">${GROUPS.map(g => `<option ${g === n.g ? 'selected' : ''}>${g}</option>`).join('')}</select></span></label>
+      <div class="field"><span class="flab">Type</span>
+        <div class="seg" style="grid-template-columns:1fr 1fr" role="radiogroup" aria-label="Type">
+          <button role="radio" aria-checked="${!n.bw}" data-action="nx-type" data-id="load">Avec charge</button>
+          <button role="radio" aria-checked="${n.bw}" data-action="nx-type" data-id="bw">Poids du corps</button>
+        </div></div>
+      <div class="field"><span class="flab">Palier de charge</span>
+        <div class="seg" role="radiogroup" aria-label="Palier de charge">${[1, 2, 2.5, 5].map(s => `<button role="radio" aria-checked="${n.step === s}" data-action="nx-step" data-id="${s}">${fmt(s)} kg</button>`).join('')}</div></div>
+      <p class="note">${n.bw ? 'Au poids du corps, la charge que tu saisis correspond au lest (0 sans lest).' : 'Le palier sert aux boutons + et − pendant la séance.'}</p>
+    </div>
+  </div>`;
+}
+
+/* ---------- Vue : progrès ---------- */
+const metricObj = () => METRICS.find(m => m.id === state.metric) || METRICS[0];
+function defaultMetric(exId){
+  const sets = state.sessions.flatMap(s => s.items.filter(it => it.ex === exId).flatMap(it => it.sets));
+  return sets.length && sets.every(s => !s.w) ? 'reps' : 'e1rm';
+}
+function seriesFor(exId, metric){
+  return sorted().map(s => {
+    const sets = s.items.filter(it => it.ex === exId).flatMap(it => it.sets);
+    if (!sets.length) return null;
+    let v;
+    if (metric === 'e1rm') v = Math.max(...sets.map(x => e1rm(x.w, x.r)));
+    else if (metric === 'max') v = Math.max(...sets.map(x => x.w));
+    else if (metric === 'vol') v = sets.reduce((a, x) => a + x.w * x.r, 0);
+    else v = Math.max(...sets.map(x => x.r));
+    return {iso:s.date, v:Math.round(v * 10) / 10};
+  }).filter(Boolean);
+}
+function metricHtml(v, m){
+  if (m.id === 'vol'){ const t = volFmt(v).split(' '); return `${t[0]}<small>${t[1]}</small>`; }
+  return `${fmt(Math.round(v * 10) / 10)}<small>${m.unit}</small>`;
+}
+function backupBlock(){
+  return `<h2 class="h2">Sauvegarde</h2>
+    <p class="note">Tes séances et tes programmes sont enregistrés sur ce téléphone. Exporte une sauvegarde de temps en temps pour ne rien perdre.</p>
+    <div class="row2"><button class="btn" data-action="export">Exporter</button><button class="btn ghost" data-action="import">Importer</button></div>`;
+}
+function viewProgress(){
+  const list = sorted();
+  if (!list.length){
+    return `<div class="page"><div class="empty">
+      <p class="empty-t">Pas encore de séance</p>
+      <p>Ta progression s’affichera ici dès ta première séance terminée.</p>
+      <button class="btn primary" data-action="tab" data-id="programs">Choisir un programme</button>
+    </div>${backupBlock()}</div>`;
+  }
+  const used = new Set(list.flatMap(s => s.items.filter(it => it.sets.length).map(it => it.ex)));
+  const order = allExEntries().map(e => e.id);
+  const exIds = order.filter(id => used.has(id)).concat([...used].filter(id => !order.includes(id)));
+  if (!state.progEx || !exIds.includes(state.progEx)){
+    const lastS = list[list.length - 1];
+    state.progEx = (lastS.items.find(it => it.sets.length) || {}).ex || exIds[0];
+    state.metric = defaultMetric(state.progEx);
+  }
+  const m = metricObj();
+  const pts = seriesFor(state.progEx, m.id);
+  const vals = pts.map(p => p.v);
+  const best = Math.max(...vals), last = vals[vals.length - 1], diff = last - vals[0];
+  const evo = pts.length > 1 ? (diff >= 0 ? '+' : '−') + metricHtml(Math.abs(diff), m) : '—';
+  const info = exInfo(state.progEx);
+  const bwNote = info && info.bw && m.id !== 'reps' ? ' Ici, la charge correspond au lest.' : '';
+
+  let out = `<div class="page">
+    <label class="sel"><span class="vh">Exercice</span><select id="ex-select">${exIds.map(id => `<option value="${h(id)}" ${id === state.progEx ? 'selected' : ''}>${h(exName(id))}</option>`).join('')}</select></label>
+    <div class="seg" role="radiogroup" aria-label="Mesure affichée">${METRICS.map(x => `<button role="radio" aria-checked="${x.id === m.id}" data-action="metric" data-id="${x.id}">${x.short}</button>`).join('')}</div>
+    <figure class="chart" id="chart"></figure>
+    <p class="cap">${h(m.cap + bwNote)}</p>
+    <div class="stats">
+      <div class="stat"><span class="stat-k">Record</span><span class="stat-v">${metricHtml(best, m)}</span></div>
+      <div class="stat"><span class="stat-k">Dernière</span><span class="stat-v">${metricHtml(last, m)}</span></div>
+      <div class="stat"><span class="stat-k">Évolution</span><span class="stat-v">${evo}</span></div>
+    </div>
+    <h2 class="h2">Historique</h2>
+    <ul class="hist">`;
+  for (const s of list.slice().reverse()){
+    const name = s.programName || (prog(s.program) || {}).name || 'Séance';
+    const open = state.openSession === s.id;
+    const nsets = s.items.reduce((a, it) => a + it.sets.length, 0);
+    const vol = s.items.reduce((a, it) => a + it.sets.reduce((b, x) => b + x.w * x.r, 0), 0);
+    out += `<li class="hrow">
+      <button class="hhead" data-action="toggle-sess" data-id="${h(s.id)}" aria-expanded="${open}">
+        <span class="hdate">${dateShort(s.date)}</span>
+        <span class="hprog">${h(name)}</span>
+        <span class="hmeta">${nsets} série${nsets > 1 ? 's' : ''}, ${volFmt(vol)}</span>
+      </button>`;
+    if (open){
+      out += '<div class="hbody">' + s.items.map(it => {
+        const bw = (exInfo(it.ex) || {}).bw;
+        return `<div class="hex"><span>${h(it.name || exName(it.ex))}</span><span class="hsets">${it.sets.map(x => h(fmtSet(x, bw))).join(' ')}</span></div>`;
+      }).join('') +
+      `<button class="btn ghost danger" data-action="del-sess" data-id="${h(s.id)}">${state.confirm === 'del' + s.id ? 'Confirmer la suppression' : 'Supprimer la séance'}</button></div>`;
+    }
+    out += '</li>';
+  }
+  return out + '</ul>' + backupBlock() + '</div>';
+}
+
+function drawChart(){
+  const el = document.getElementById('chart');
+  if (!el || !state.progEx) return;
+  const m = metricObj();
+  const pts = seriesFor(state.progEx, m.id);
+  const W = el.clientWidth, H = el.clientHeight;
+  if (!W || !H || !pts.length){ el.innerHTML = ''; return; }
+  const vs = pts.map(p => p.v);
+  let lo = Math.min(...vs), hi = Math.max(...vs);
+  if (hi === lo){ const pad = Math.max(1, Math.abs(hi) * 0.08); lo -= pad; hi += pad; }
+  else { const pad = (hi - lo) * 0.15; lo -= pad; hi += pad; }
+  if (Math.min(...vs) >= 0 && lo < 0) lo = 0;
+  const pl = 42, pr = 16, pt = 28, pb = 26;
+  const iw = W - pl - pr, ih = H - pt - pb;
+  const X = i => pts.length === 1 ? pl + iw / 2 : pl + iw * i / (pts.length - 1);
+  const Y = v => pt + ih * (1 - (v - lo) / (hi - lo));
+  const tick = v => m.id === 'vol' && hi >= 1000 ? fmt(Math.round(v / 100) / 10) + ' t' : fmt(hi - lo > 6 ? Math.round(v) : Math.round(v * 10) / 10);
+  const lastV = vs[vs.length - 1];
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${h(exName(state.progEx))}, ${pts.length} séance${pts.length > 1 ? 's' : ''}, dernière valeur ${fmt(lastV)} ${m.unit}">`;
+  for (let k = 0; k < 3; k++){
+    const v = lo + (hi - lo) * k / 2, y = Y(v).toFixed(1);
+    s += `<line class="g" x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}"/><text x="${pl - 8}" y="${(+y + 4).toFixed(1)}" text-anchor="end">${tick(v)}</text>`;
+  }
+  if (pts.length > 1){
+    s += `<path class="ln" d="${pts.map((p, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join('')}"/>`;
+  }
+  const r = pts.length > 30 ? 2 : 3;
+  pts.forEach((p, i) => {
+    const isLast = i === pts.length - 1;
+    s += `<circle class="${isLast ? 'dl' : 'd'}" cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="${isLast ? 4.5 : r}"/>`;
+  });
+  const lx = X(pts.length - 1), ly = Y(lastV);
+  const lbl = m.id === 'vol' ? volFmt(lastV) : `${fmt(lastV)} ${m.unit}`;
+  s += `<text class="vl" x="${lx.toFixed(1)}" y="${(ly - 11).toFixed(1)}" text-anchor="${pts.length === 1 ? 'middle' : 'end'}">${h(lbl)}</text>`;
+  s += `<text x="${pl}" y="${H - 8}" text-anchor="start">${dateTiny(pts[0].iso)}</text>`;
+  if (pts.length > 1) s += `<text x="${W - pr}" y="${H - 8}" text-anchor="end">${dateTiny(pts[pts.length - 1].iso)}</text>`;
+  el.innerHTML = s + '</svg>';
+}
+
+/* ---------- Rendu ---------- */
+let lastView = null;
+function render(){
+  if (state.view === 'session' && !state.draft) state.view = 'programs';
+  if ((state.view === 'editor' || state.view === 'picker') && !state.edit) state.view = 'programs';
+  if (state.view === 'newex' && (!state.newEx || !state.edit)) state.view = state.edit ? 'editor' : 'programs';
+  const top = document.getElementById('topbar');
+  top.hidden = !!PARENT[state.view];
+  for (const t of top.querySelectorAll('.tab')) t.setAttribute('aria-selected', String(t.dataset.id === state.view));
+  const v = document.getElementById('view');
+  const views = {session:viewSession, editor:viewEditor, picker:viewPicker, newex:viewNewEx, progress:viewProgress, programs:viewPrograms};
+  v.innerHTML = (views[state.view] || viewPrograms)();
+  state.flash = null;
+  if (state.view === 'progress') drawChart();
+  if (lastView !== state.view){ window.scrollTo(0, 0); lastView = state.view; }
+  if (state.scrollEnd){ state.scrollEnd = false; window.scrollTo(0, document.body.scrollHeight); }
+}
+
+/* ---------- Actions : séance ---------- */
+function startSession(pid){
+  const p = prog(pid);
+  if (!p) return;
+  state.draft = {id:newId('s'), program:pid, plan:{name:p.name, items:clone(p.items)}, startedAt:Date.now(), idx:0,
+    items:p.items.map(it => ({ex:it.ex, sets:[]})), inputs:{}, lastSetAt:null};
+  saveDraft();
+  state.openProgram = null;
+  setView('session');
+}
+function stepInput(f, dir, step){
+  const d = state.draft, inp = inputsFor(d.idx);
+  const el = document.getElementById('in-' + f);
+  let cur = parseNum(el.value); if (isNaN(cur)) cur = inp[f] || 0;
+  const nv = f === 'w' ? Math.min(1000, Math.max(0, round2(cur + dir * step))) : Math.min(200, Math.max(1, Math.round(cur) + dir));
+  inp[f] = nv; el.value = fmt(nv); saveDraft();
+}
+function addSet(){
+  const d = state.draft, inp = inputsFor(d.idx);
+  const wEl = document.getElementById('in-w'), rEl = document.getElementById('in-r');
+  const w = parseNum(wEl.value), r = parseInt(rEl.value, 10);
+  if (isNaN(w) || w < 0 || w > 1000){ wEl.focus(); toast('Indique une charge valide'); return false; }
+  if (isNaN(r) || r < 1 || r > 200){ rEl.focus(); toast('Indique un nombre de répétitions'); return false; }
+  inp.w = round2(w); inp.r = r;
+  const sets = d.items[d.idx].sets;
+  sets.push({w:inp.w, r});
+  state.flash = sets.length - 1;
+  d.lastSetAt = Date.now();
+  saveDraft();
+  return true;
+}
+function finishSession(){
+  const d = state.draft;
+  const items = d.items.filter(it => it.sets.length).map(it => ({ex:it.ex, name:exName(it.ex), sets:it.sets.map(s => ({w:s.w, r:s.r}))}));
+  state.draft = null; LS.del(K.draft);
+  if (!items.length){ setView('programs'); render(); toast('Séance vide, rien n’a été enregistré'); return; }
+  const s = {id:d.id, date:new Date().toISOString(), program:d.program, programName:d.plan.name,
+    minutes:Math.max(1, Math.round((Date.now() - d.startedAt) / 60000)), items};
+  state.sessions.push(s); persist();
+  state.openSession = s.id;
+  state.progEx = items[0].ex; state.metric = defaultMetric(items[0].ex);
+  setView('progress'); render(); toast('Séance enregistrée');
+}
+
+/* ---------- Actions : programmes ---------- */
+function openEditor(id){
+  const p = id ? prog(id) : null;
+  state.edit = p ? {id:p.id, name:p.name, desc:p.desc || '', items:clone(p.items), isNew:false}
+                 : {id:null, name:'', desc:'', items:[], isNew:true};
+  setView('editor');
+}
+function saveEditor(){
+  const e = state.edit;
+  const nameEl = document.getElementById('ed-name');
+  const name = (nameEl ? nameEl.value : e.name).trim();
+  if (!name){ if (nameEl) nameEl.focus(); toast('Donne un nom au programme'); return false; }
+  if (!e.items.length){ toast('Ajoute au moins un exercice'); return false; }
+  const p = {id:e.id || newId('p'), name, items:e.items};
+  if (e.desc) p.desc = e.desc;
+  const i = state.programs.findIndex(x => x.id === p.id);
+  if (i >= 0) state.programs[i] = p; else state.programs.push(p);
+  persistPrograms();
+  state.openProgram = p.id;
+  state.edit = null;
+  setView('programs');
+  toast(e.isNew ? 'Programme créé' : 'Programme enregistré');
+  return true;
+}
+function addToEdit(exId){
+  const ex = exInfo(exId);
+  state.edit.items.push({ex:exId, sets:3, reps:10});
+  state.pickQuery = '';
+  state.scrollEnd = true;
+  setView('editor');
+  toast(`${ex ? ex.name : 'Exercice'} ajouté`);
+}
+function saveNewEx(){
+  const n = state.newEx;
+  const el = document.getElementById('nx-name');
+  const name = (el ? el.value : n.name).trim();
+  if (!name){ if (el) el.focus(); toast('Donne un nom à l’exercice'); return; }
+  const existing = allExEntries().find(e => norm(e.name) === norm(name));
+  state.newEx = null;
+  if (existing){ addToEdit(existing.id); return; }
+  const id = newId('x');
+  state.customEx[id] = {g:n.g, name, step:n.step, start:n.bw ? 0 : 20, bw:n.bw, custom:true};
+  persistCustomEx();
+  addToEdit(id);
+}
+
+/* ---------- Sauvegarde ---------- */
+function exportData(){
+  const data = {app:'carnet-muscu', version:1, exportedAt:new Date().toISOString(),
+    sessions:state.sessions, programs:state.programs, customEx:state.customEx};
+  const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `carnet-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast('Sauvegarde téléchargée');
+}
+function importData(text){
+  let d;
+  try { d = JSON.parse(text); } catch(e){ toast('Ce fichier n’est pas une sauvegarde valide'); return; }
+  if (!d || !Array.isArray(d.sessions)){ toast('Ce fichier n’est pas une sauvegarde valide'); return; }
+  const ids = new Set(state.sessions.map(s => s.id));
+  let added = 0;
+  for (const s of d.sessions){
+    if (!validSession(s) || ids.has(s.id)) continue;
+    const c = clone(s); delete c.synced;
+    state.sessions.push(c); ids.add(c.id); added++;
+  }
+  if (d.customEx && typeof d.customEx === 'object' && !Array.isArray(d.customEx)){
+    for (const [id, e] of Object.entries(d.customEx)) if (e && typeof e.name === 'string' && !EX[id]) state.customEx[id] = e;
+  }
+  if (Array.isArray(d.programs)){
+    for (const p of d.programs){
+      if (!validProgram(p)) continue;
+      const i = state.programs.findIndex(x => x.id === p.id);
+      if (i >= 0) state.programs[i] = clone(p); else state.programs.push(clone(p));
+    }
+  }
+  persist(); persistPrograms(); persistCustomEx();
+  state.progEx = null;
+  render();
+  toast(added ? `${added} séance${added > 1 ? 's' : ''} importée${added > 1 ? 's' : ''}` : 'Aucune nouvelle séance dans ce fichier');
+}
+
+/* ---------- Événements ---------- */
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-action]');
+  if (!b || b.disabled) return;
+  const a = b.dataset.action, id = b.dataset.id, d = state.draft, e = state.edit;
+  const prev = state.confirm;
+  state.confirm = null; clearTimeout(confirmT);
+  const k = b.dataset.k !== undefined ? +b.dataset.k : -1;
+  switch (a){
+    case 'tab': setView(id); break;
+    case 'toggle-prog': state.openProgram = state.openProgram === id ? null : id; break;
+    case 'start': if (!d) startSession(id); break;
+    case 'resume': if (d) setView('session'); break;
+    case 'abandon':
+      if (prev === 'abandon'){ state.draft = null; LS.del(K.draft); toast('Séance abandonnée'); }
+      else arm('abandon');
+      break;
+    case 'edit-prog': openEditor(id); break;
+    case 'new-prog': openEditor(null); break;
+    case 'restore-defaults': {
+      const missing = DEFAULT_PROGRAMS.filter(dp => !prog(dp.id)).map(clone);
+      state.programs = missing.concat(state.programs); persistPrograms();
+      toast('Programmes d’origine réinstallés');
+      break;
+    }
+
+    case 'leave': setView('programs'); break;
+    case 'finish':
+      if (prev === 'finish'){ finishSession(); return; }
+      arm('finish'); break;
+    case 'inc': case 'dec':
+      if (d) stepInput(b.dataset.f, a === 'inc' ? 1 : -1, parseFloat(b.dataset.step));
+      if (!prev) return;
+      break;
+    case 'add-set': if (!d || !addSet()) return; break;
+    case 'rm-set':
+      if (prev === 'rm' + k){ d.items[d.idx].sets.splice(k, 1); delete d.inputs[d.idx]; saveDraft(); }
+      else arm('rm' + k);
+      break;
+    case 'prev': if (d && d.idx > 0){ d.idx--; saveDraft(); } break;
+    case 'next': if (d && d.idx < d.plan.items.length - 1){ d.idx++; saveDraft(); } break;
+
+    case 'ed-cancel': state.edit = null; setView('programs'); break;
+    case 'ed-save': if (!saveEditor()) return; break;
+    case 'ed-add': state.pickQuery = ''; setView('picker'); break;
+    case 'ed-inc': case 'ed-dec': {
+      const it = e.items[k], f = b.dataset.f, dir = a === 'ed-inc' ? 1 : -1;
+      if (f === 'sets') it.sets = Math.min(10, Math.max(1, it.sets + dir));
+      else { it.reps = Math.min(50, Math.max(1, it.reps + dir)); delete it.label; }
+      const out = b.parentElement.querySelector('output');
+      if (out) out.firstChild.nodeValue = String(f === 'sets' ? it.sets : it.reps);
+      if (!prev) return;
+      break;
+    }
+    case 'ed-up': if (k > 0){ const t = e.items[k - 1]; e.items[k - 1] = e.items[k]; e.items[k] = t; } break;
+    case 'ed-down': if (k < e.items.length - 1){ const t = e.items[k + 1]; e.items[k + 1] = e.items[k]; e.items[k] = t; } break;
+    case 'ed-rm': e.items.splice(k, 1); break;
+    case 'ed-delete':
+      if (prev === 'ed-delete'){
+        state.programs = state.programs.filter(p => p.id !== e.id); persistPrograms();
+        state.edit = null; setView('programs'); toast('Programme supprimé');
+      } else arm('ed-delete');
+      break;
+
+    case 'pk-back': setView('editor'); break;
+    case 'pk-add': addToEdit(id); break;
+    case 'pk-new': state.newEx = {name:state.pickQuery.trim(), g:'Pectoraux', bw:false, step:2.5}; setView('newex'); break;
+    case 'nx-back': state.newEx = null; setView('picker'); break;
+    case 'nx-type': state.newEx.bw = id === 'bw'; break;
+    case 'nx-step': state.newEx.step = parseFloat(id); break;
+    case 'nx-save': saveNewEx(); break;
+
+    case 'metric': state.metric = id; break;
+    case 'toggle-sess': state.openSession = state.openSession === id ? null : id; break;
+    case 'del-sess':
+      if (prev === 'del' + id){
+        state.sessions = state.sessions.filter(s => s.id !== id); persist();
+        if (state.openSession === id) state.openSession = null;
+        toast('Séance supprimée');
+      } else arm('del' + id);
+      break;
+    case 'export': exportData(); break;
+    case 'import': document.getElementById('import-file').click(); break;
+  }
+  render();
+});
+
+document.addEventListener('input', ev => {
+  const el = ev.target;
+  if (!el.matches) return;
+  if (el.matches('.stp-v input') && state.draft){
+    const f = el.dataset.f;
+    const v = f === 'w' ? parseNum(el.value) : parseInt(el.value, 10);
+    if (!isNaN(v)){ inputsFor(state.draft.idx)[f] = f === 'w' ? round2(v) : v; saveDraft(); }
+  } else if (el.id === 'ed-name' && state.edit){
+    state.edit.name = el.value;
+  } else if (el.id === 'nx-name' && state.newEx){
+    state.newEx.name = el.value;
+  } else if (el.id === 'pk-q'){
+    state.pickQuery = el.value;
+    const list = document.getElementById('pk-list'); if (list) list.innerHTML = pickList();
+  }
+});
+document.addEventListener('focusin', ev => {
+  if (ev.target.matches && ev.target.matches('.stp-v input')) setTimeout(() => { try { ev.target.select(); } catch(e){} }, 0);
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' && ev.target.matches && ev.target.matches('.stp-v input, #ed-name, #nx-name, #pk-q')) ev.target.blur();
+});
+document.addEventListener('change', ev => {
+  const el = ev.target;
+  if (el.id === 'ex-select'){
+    state.progEx = el.value; state.metric = defaultMetric(state.progEx); state.confirm = null; render();
+  } else if (el.id === 'nx-group' && state.newEx){
+    state.newEx.g = el.value;
+  } else if (el.id === 'import-file' && el.files && el.files[0]){
+    el.files[0].text().then(importData).catch(() => toast('Lecture du fichier impossible'));
+    el.value = '';
+  }
+});
+
+let rz;
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (state.view === 'progress') drawChart(); }, 120); });
+
+setInterval(() => {
+  if (state.view !== 'session' || !state.draft) return;
+  const r = document.getElementById('rest'); if (r) r.textContent = restText(state.draft);
+  const el = document.getElementById('elapsed'); if (el) el.textContent = elapsed(state.draft.startedAt);
+}, 1000);
+
+/* ---------- Démarrage ---------- */
+if (state.draft) setView('session');
+render();
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+}
+})();
+</script>
+</body>
+</html>
