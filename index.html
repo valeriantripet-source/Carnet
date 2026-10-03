@@ -24,6 +24,7 @@
   --text:#ECEAE4;
   --soft:#C9C7C1;
   --danger:#D47D6E;
+  --gold:#D9B45A;
   --cond:"Barlow Condensed","Roboto Condensed","Arial Narrow",sans-serif;
   --sans:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --pad:12px;
@@ -105,7 +106,12 @@ main{flex:1;display:flex;flex-direction:column}
 .exlist li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
 .exlist em{font-style:normal;color:var(--muted)}
 .tgt{font:600 17px/1.2 var(--cond);white-space:nowrap;font-variant-numeric:tabular-nums}
-.prog-actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+.prog-actions{display:flex;gap:8px}
+.prog-actions>.btn{flex:1 1 0;min-width:0;padding:0 8px;font-size:14px}
+.prog-actions>.primary{flex-grow:1.5}
+.tab-ic{display:inline-flex;align-items:center;padding:0 10px}
+.tab-ic svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+@media (max-width:340px){.mark{display:none}}
 
 /* Séance */
 .session{flex:1;display:flex;flex-direction:column;gap:8px;padding:0 var(--pad) 10px}
@@ -182,8 +188,106 @@ main{flex:1;display:flex;flex-direction:column}
 .empty-t{margin:0;font:600 26px/1.1 var(--cond)}
 .empty p{margin:0;color:var(--muted)}
 
-.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:20;max-width:calc(100% - 24px);padding:10px 14px;border-radius:10px;background:var(--text);color:#000;font:600 14px/1.2 var(--sans);transform:translate(-50%,-160%);transition:transform .25s ease;pointer-events:none}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:60;max-width:calc(100% - 24px);padding:10px 14px;border-radius:10px;background:var(--text);color:#000;font:600 14px/1.2 var(--sans);transform:translate(-50%,-160%);transition:transform .25s ease;pointer-events:none}
 .toast.show{transform:translate(-50%,0)}
+
+/* Animations de motivation */
+.fx{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(0,0,0,.975);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);-webkit-user-select:none;user-select:none;animation:fx-in .18s ease-out both}
+.fx[hidden]{display:none}
+.fx.out{animation:fx-out .2s ease-in both}
+.fx canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.fx-stage{position:relative;z-index:1;width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 16px) 20px calc(env(safe-area-inset-bottom,0px) + 16px);text-align:center}
+@keyframes fx-in{from{opacity:0}to{opacity:1}}
+@keyframes fx-out{from{opacity:1}to{opacity:0}}
+@keyframes fx-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.fx-phrase{margin:0;font:700 clamp(26px,8vw,40px)/1.05 var(--cond);animation:fx-up .4s ease-out .3s both}
+.fx.rec .fx-phrase{color:var(--gold)}
+.fx-next{margin:0;font-size:13px;color:var(--muted);animation:fx-up .4s ease-out .5s both}
+.fx-next b{display:block;margin:2px 0;font:600 clamp(20px,6vw,26px)/1.1 var(--cond);color:var(--text)}
+
+/* Intermédiaire : anneau */
+.ring-wrap{position:relative;width:min(52vw,36vh,210px);aspect-ratio:1/1;margin-bottom:4px}
+.ring{display:block;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+.ring-bg{fill:none;stroke:var(--raised);stroke-width:9}
+.ring-fg{fill:none;stroke:var(--text);stroke-width:9;animation:ring-fill .65s cubic-bezier(.3,.7,.2,1) .12s both}
+.fx.rec .ring-fg{stroke:var(--gold)}
+.ring-ticks line{stroke:#000;stroke-width:2.5}
+@keyframes ring-fill{from{stroke-dashoffset:var(--o1)}to{stroke-dashoffset:var(--o2)}}
+.ring-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-num b{font:700 clamp(46px,15vw,76px)/1 var(--cond);font-variant-numeric:tabular-nums}
+.ring-num b.pop{animation:fx-pop .38s cubic-bezier(.2,1.6,.4,1) both}
+.ring-num small{font-size:13px;color:var(--muted)}
+.ring-pulse{position:absolute;inset:4.5%;border-radius:50%;border:2px solid var(--text);opacity:0;animation:fx-pulse .7s ease-out .74s both}
+.fx.rec .ring-pulse{border-color:var(--gold)}
+@keyframes fx-pop{from{transform:scale(1.5)}to{transform:scale(1)}}
+@keyframes fx-pulse{from{opacity:.7;transform:scale(.96)}to{opacity:0;transform:scale(1.32)}}
+
+/* Intermédiaire : craie */
+.fx-chalk .fx-phrase{font-size:clamp(32px,10vw,52px);animation:fx-stamp .42s cubic-bezier(.2,1.2,.35,1) .06s both}
+@keyframes fx-stamp{from{opacity:0;transform:scale(1.35);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+.chalk-line{display:block;width:62%;max-width:260px;height:5px;border-radius:3px;background:repeating-linear-gradient(90deg,rgba(236,234,228,.92) 0 9px,rgba(236,234,228,.5) 9px 13px);transform-origin:left center;animation:fx-line .38s cubic-bezier(.5,0,.2,1) .4s both}
+.fx.rec .chalk-line{background:var(--gold)}
+.fx-chalk .fx-next{animation-delay:.62s}
+@keyframes fx-line{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* Intermédiaire : typo */
+.slam-bg{position:absolute;left:50%;top:50%;z-index:-1;font:700 min(115vw,80vh)/1 var(--cond);color:transparent;-webkit-text-stroke:2px #24272B;pointer-events:none;animation:fx-bg 2s cubic-bezier(.2,.7,.2,1) both}
+@keyframes fx-bg{from{opacity:0;transform:translate(-50%,-52%) scale(1.5)}25%{opacity:1}to{opacity:1;transform:translate(-50%,-52%) scale(1.08)}}
+.slam-l{margin:0;font:700 clamp(46px,15vw,88px)/.95 var(--cond)}
+.fx.rec .slam-l{color:var(--gold)}
+.slam-l .w{display:inline-block;animation:fx-slam .26s cubic-bezier(.2,1.25,.3,1) calc(.05s + var(--d) * .16s) both}
+@keyframes fx-slam{from{opacity:0;transform:scale(2.6)}to{opacity:1;transform:scale(1)}}
+@keyframes fx-shake{0%{transform:translate(0,0)}25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,1px)}100%{transform:translate(0,0)}}
+.slam-bar{display:block;width:70%;max-width:300px;height:6px;background:var(--text);animation:fx-line-c .3s cubic-bezier(.5,0,.2,1) var(--bar,.62s) both}
+.fx.rec .slam-bar{background:var(--gold)}
+@keyframes fx-line-c{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.fx-slam .fx-next{animation:fx-slide .38s cubic-bezier(.2,.8,.2,1) var(--nxt,.74s) both}
+@keyframes fx-slide{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+
+/* Finales */
+.fx-fin{background:rgba(0,0,0,.985)}
+.fx-conf{--d0:.15s}
+.fx-medal{--d0:.85s}
+.fx-fire{--d0:.25s}
+.fin-t{margin:0;font:700 clamp(34px,11vw,54px)/1 var(--cond);animation:fx-big .45s cubic-bezier(.2,1.3,.35,1) var(--d0) both}
+.fin-s{margin:0;font-size:15px;color:var(--soft);animation:fx-up .4s ease-out calc(var(--d0) + .15s) both}
+.fin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:340px;animation:fx-up .4s ease-out calc(var(--d0) + .3s) both}
+.fin-stats.two{grid-template-columns:1fr 1fr;max-width:240px}
+.fin-stats div{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:12px;background:rgba(34,36,40,.88)}
+.fin-stats b{font:600 28px/1 var(--cond);font-variant-numeric:tabular-nums}
+.fin-stats small{margin-top:3px;font-size:12px;color:var(--muted)}
+.fin-hero{margin:0;font:700 clamp(64px,22vw,112px)/.9 var(--cond);font-variant-numeric:tabular-nums;animation:fx-big .5s cubic-bezier(.2,1.3,.35,1) calc(var(--d0) + .15s) both}
+.fin-hero .u{margin-left:6px;font-size:.4em;color:var(--gold)}
+.fin-hero-l{margin:-2px 0 4px;font-size:14px;color:var(--soft);animation:fx-up .4s ease-out calc(var(--d0) + .3s) both}
+.fx-fire .fin-t{font-size:clamp(26px,8vw,38px);animation-delay:calc(var(--d0) + .45s)}
+.fx-fire .fin-s{animation-delay:calc(var(--d0) + .55s)}
+.fx-fire .fin-stats{animation-delay:calc(var(--d0) + .65s)}
+.fin-rec{margin:0;font:600 15px/1.3 var(--sans);color:var(--gold);animation:fx-up .4s ease-out calc(var(--d0) + .45s) both}
+.fin-btn{min-width:220px;margin-top:6px;animation:fx-up .4s ease-out calc(var(--d0) + .6s) both}
+.fx-fire .fin-rec{animation-delay:calc(var(--d0) + .75s)}
+.fx-fire .fin-btn{animation-delay:calc(var(--d0) + .85s)}
+@keyframes fx-big{from{opacity:0;transform:scale(1.6)}to{opacity:1;transform:scale(1)}}
+.medal-wrap{position:relative;width:min(32vw,24vh,140px);margin-bottom:2px}
+.medal{display:block;width:100%;height:auto;overflow:visible;animation:fx-drop .6s cubic-bezier(.3,1.35,.5,1) .05s both}
+.medal-swing{transform-box:view-box;transform-origin:60px 0;animation:fx-swing 1.7s ease-out .45s both}
+.medal-shine{transform-box:view-box;transform:translateX(-40px) skewX(-20deg);animation:fx-shine .75s ease-in-out 1.3s both}
+@keyframes fx-drop{from{opacity:0;transform:translateY(-120%)}to{opacity:1;transform:translateY(0)}}
+@keyframes fx-swing{0%{transform:rotate(0)}15%{transform:rotate(12deg)}35%{transform:rotate(-8deg)}55%{transform:rotate(5deg)}75%{transform:rotate(-2deg)}100%{transform:rotate(0)}}
+@keyframes fx-shine{from{transform:translateX(-40px) skewX(-20deg)}to{transform:translateX(150px) skewX(-20deg)}}
+.spk{position:absolute;left:var(--x);top:var(--y);width:var(--s,12px);height:var(--s,12px);fill:#F3DA92;opacity:0;animation:fx-twinkle 1.5s ease-in-out var(--d) infinite}
+@keyframes fx-twinkle{0%{opacity:0;transform:scale(0) rotate(0)}30%{opacity:1;transform:scale(1) rotate(45deg)}60%{opacity:0;transform:scale(.3) rotate(90deg)}100%{opacity:0;transform:scale(0)}}
+@media (max-height:460px){
+  .fx-stage{gap:6px}
+  .fin-t{font-size:30px}
+  .fin-stats b{font-size:22px}
+  .fin-btn{min-height:40px}
+  .fin-hero{font-size:58px}
+  .medal-wrap{width:min(26vw,19vh,110px)}
+}
+.fx.rm *,.fx.rm{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}
+
+/* Réglages */
+.h2.first{margin-top:2px}
 
 /* Animation d'ouverture : l'haltère s'assemble */
 #splash{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,3vh,22px);background:#000;cursor:pointer;animation:sp-out .32s ease-in 1.32s forwards}
@@ -238,11 +342,13 @@ main{flex:1;display:flex;flex-direction:column}
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" data-action="tab" data-id="programs">Programmes</button>
       <button class="tab" role="tab" data-action="tab" data-id="progress">Progrès</button>
+      <button class="tab tab-ic" role="tab" data-action="tab" data-id="settings" aria-label="Réglages"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
     </nav>
   </header>
   <main id="view"></main>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="fx" id="fx" hidden aria-live="polite"><canvas id="fx-canvas"></canvas><div class="fx-stage" id="fx-stage"></div></div>
 <input type="file" id="import-file" accept=".json,application/json" hidden>
 
 <script>
@@ -340,7 +446,7 @@ const METRICS = [
 ];
 
 /* ---------- Stockage local ---------- */
-const K = {sessions:'carnet.v1.sessions', draft:'carnet.v1.draft', programs:'carnet.v1.programs', customEx:'carnet.v1.customEx'};
+const K = {sessions:'carnet.v1.sessions', draft:'carnet.v1.draft', programs:'carnet.v1.programs', customEx:'carnet.v1.customEx', prefs:'carnet.v1.prefs'};
 const LS = {
   get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ toast('Stockage plein ou indisponible'); } },
@@ -357,6 +463,7 @@ const state = {
   programs:null, customEx:{}, sessions:[],
   progEx:null, metric:'e1rm', openSession:null, confirm:null, flash:null,
   edit:null, pickQuery:'', newEx:null, scrollEnd:false,
+  prefs:Object.assign({inter:'ring', final:'confetti'}, LS.get(K.prefs, {}) || {}),
 };
 {
   const ps = LS.get(K.programs, null);
@@ -484,6 +591,11 @@ function setView(v){
 window.addEventListener('popstate', () => {
   if (ignorePop){ ignorePop = false; return; }
   guarded = false;
+  if (fx.open){
+    closeFx();
+    if (PARENT[state.view]){ try { history.pushState({carnet:1}, ''); guarded = true; } catch(e){} }
+    return;
+  }
   const parent = PARENT[state.view];
   if (!parent) return;
   if (state.view === 'editor') state.edit = null;
@@ -523,8 +635,9 @@ function viewPrograms(){
           p.items.map(it => `<li><span>${h(exName(it.ex))}${it.hint ? ` <em>${h(it.hint)}</em>` : ''}</span><span class="tgt">${it.sets} × ${h(it.label || it.reps)}</span></li>`).join('') +
           '</ol>' +
           (d ? '<p class="note">Termine ou abandonne la séance en cours pour en commencer une autre.</p>' : '') +
-          `<div class="prog-actions">${d ? '<span></span>' : `<button class="btn primary" data-action="start" data-id="${h(p.id)}">Commencer</button>`}
-            <button class="btn ghost" data-action="edit-prog" data-id="${h(p.id)}">Modifier</button></div>` +
+          `<div class="prog-actions">${d ? '' : `<button class="btn primary" data-action="start" data-id="${h(p.id)}">Commencer</button>`}
+            <button class="btn ghost" data-action="edit-prog" data-id="${h(p.id)}">Modifier</button>
+            <button class="btn ghost danger" data-action="del-prog" data-id="${h(p.id)}">${state.confirm === 'delp' + p.id ? 'Confirmer' : 'Supprimer'}</button></div>` +
           '</div>';
       }
       out += '</li>';
@@ -720,7 +833,7 @@ function viewProgress(){
       <p class="empty-t">Pas encore de séance</p>
       <p>Ta progression s’affichera ici dès ta première séance terminée.</p>
       <button class="btn primary" data-action="tab" data-id="programs">Choisir un programme</button>
-    </div>${backupBlock()}</div>`;
+    </div></div>`;
   }
   const used = new Set(list.flatMap(s => s.items.filter(it => it.sets.length).map(it => it.ex)));
   const order = allExEntries().map(e => e.id);
@@ -770,7 +883,7 @@ function viewProgress(){
     }
     out += '</li>';
   }
-  return out + '</ul>' + backupBlock() + '</div>';
+  return out + '</ul></div>';
 }
 
 function drawChart(){
@@ -812,6 +925,303 @@ function drawChart(){
   el.innerHTML = s + '</svg>';
 }
 
+/* ---------- Vue : réglages ---------- */
+const INTERS = [
+  {id:'ring',  label:'Anneau', desc:'Un anneau se remplit à chaque exercice terminé, avec un message et l’exercice suivant.'},
+  {id:'chalk', label:'Craie',  desc:'Un nuage de craie explose derrière un message de motivation.'},
+  {id:'slam',  label:'Typo',   desc:'Les mots s’écrasent à l’écran, « Et de deux. », avec une secousse à chaque impact.'},
+  {id:'none',  label:'Aucune', desc:'Passage direct à l’exercice suivant.'},
+];
+const FINALS = [
+  {id:'confetti',  label:'Confettis', desc:'Deux canons de confettis, puis le bilan de ta séance qui s’affiche.'},
+  {id:'medal',     label:'Médaille',  desc:'Une médaille tombe, se balance et brille au-dessus de ton bilan.'},
+  {id:'fireworks', label:'Artifice',  desc:'Un feu d’artifice autour du poids total soulevé pendant la séance.'},
+  {id:'none',      label:'Aucune',    desc:'Retour direct à ta progression.'},
+];
+function prefSeg(list, cur, action){
+  return `<div class="seg" role="radiogroup">${list.map(x => `<button role="radio" aria-checked="${x.id === cur}" data-action="${action}" data-id="${x.id}">${x.label}</button>`).join('')}</div>`;
+}
+function viewSettings(){
+  const pi = INTERS.find(x => x.id === state.prefs.inter) || INTERS[0];
+  const pf = FINALS.find(x => x.id === state.prefs.final) || FINALS[0];
+  return `<div class="page">
+    <h2 class="h2 first">Animations</h2>
+    <span class="flab">Entre les exercices</span>
+    ${prefSeg(INTERS, pi.id, 'pref-inter')}
+    <p class="note">${h(pi.desc)}</p>
+    <button class="btn ghost wide" data-action="preview-inter" ${pi.id === 'none' ? 'disabled' : ''}>Voir l’aperçu</button>
+    <span class="flab">Fin de séance</span>
+    ${prefSeg(FINALS, pf.id, 'pref-final')}
+    <p class="note">${h(pf.desc)}</p>
+    <button class="btn ghost wide" data-action="preview-final" ${pf.id === 'none' ? 'disabled' : ''}>Voir l’aperçu</button>
+    ${backupBlock()}
+  </div>`;
+}
+
+/* ---------- Animations de motivation ---------- */
+const CHALK = '#ECEAE4', SILVER = '#969AA0', GRAPHITE = '#5A5E63', GOLD = '#D9B45A', PALE = '#F3DA92';
+const NUM_WORDS = ['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze'];
+const PHRASES = ['Exercice bouclé.', 'Propre. On enchaîne.', 'Une de plus dans la poche.', 'Bien tenu.', 'Solide.',
+  'C’est comme ça qu’on progresse.', 'Garde ce rythme.', 'Travail fait.', 'Rien ne t’arrête.', 'Ça, c’est du sérieux.'];
+const FIN_SUBS = ['Beau travail.', 'Mission accomplie.', 'Tu peux être fier de toi.', 'Encore une de faite.', 'Rien à redire.'];
+const SAMPLE_INTER = {done:2, total:5, exName:'Tractions', nextName:'Développé militaire debout', nextTarget:'4 × 6', record:false};
+const SAMPLE_FINAL = {programName:'Force', minutes:52, sets:21, volume:6840, records:['Développé couché']};
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const rnd = (a, b) => a + Math.random() * (b - a);
+const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+function setScore(sets, useReps){ return useReps ? Math.max(...sets.map(x => x.r)) : Math.max(...sets.map(x => e1rm(x.w, x.r))); }
+function isRecord(exId, sets, excludeId){
+  if (!sets.length) return false;
+  const prev = state.sessions.filter(s => s.id !== excludeId).flatMap(s => s.items.filter(it => it.ex === exId).flatMap(it => it.sets));
+  if (!prev.length) return false;
+  const useReps = prev.concat(sets).every(x => !x.w);
+  return setScore(sets, useReps) > setScore(prev, useReps) + 1e-9;
+}
+
+const fx = {el:null, stage:null, cv:null, ctx:null, parts:[], raf:0, last:0, W:0, H:0, timers:[], open:false, kind:'', t0:0};
+function fxInit(){
+  fx.el = document.getElementById('fx'); fx.stage = document.getElementById('fx-stage');
+  fx.cv = document.getElementById('fx-canvas'); fx.ctx = fx.cv.getContext('2d');
+  fx.el.addEventListener('click', e => {
+    if (e.target.closest('[data-action]')) return;
+    if (fx.kind === 'inter' || Date.now() - fx.t0 > 1500) closeFx();
+  });
+  window.addEventListener('resize', () => { if (fx.open) fxSize(); });
+}
+function fxSize(){
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  fx.W = window.innerWidth; fx.H = window.innerHeight;
+  fx.cv.width = Math.round(fx.W * dpr); fx.cv.height = Math.round(fx.H * dpr);
+  fx.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function later(ms, fn){ fx.timers.push(setTimeout(fn, ms)); }
+function openFx(kind, cls, html){
+  closeFx(true);
+  fx.kind = kind; fx.open = true; fx.t0 = Date.now();
+  fx.el.className = 'fx ' + cls + (reduceMotion() ? ' rm' : '');
+  fx.stage.innerHTML = html;
+  fx.el.hidden = false;
+  document.documentElement.style.overflow = 'hidden';
+  fxSize();
+}
+function closeFx(instant){
+  if (!fx.open) return;
+  fx.open = false;
+  fx.timers.forEach(clearTimeout); fx.timers = [];
+  cancelAnimationFrame(fx.raf); fx.raf = 0; fx.parts = [];
+  document.documentElement.style.overflow = '';
+  const done = () => { if (!fx.open){ fx.el.hidden = true; fx.stage.innerHTML = ''; fx.ctx.clearRect(0, 0, fx.W, fx.H); } };
+  if (instant) done(); else { fx.el.classList.add('out'); setTimeout(done, 200); }
+}
+
+/* Particules (canvas) */
+function spawn(p){
+  const life = p.life || 60;
+  fx.parts.push(Object.assign({vx:0, vy:0, g:0, drag:1, size:2, alpha:1, rot:0, vr:0, flip:0, vf:0, type:'dot', color:CHALK}, p, {life, max:life}));
+  if (!fx.raf){ fx.last = performance.now(); fx.raf = requestAnimationFrame(tick); }
+}
+function tick(now){
+  const dt = Math.min(2.5, (now - fx.last) / 16.67); fx.last = now;
+  const c = fx.ctx; c.clearRect(0, 0, fx.W, fx.H);
+  const cur = fx.parts; fx.parts = [];
+  for (const p of cur){
+    const dr = Math.pow(p.drag, dt);
+    p.vx *= dr; p.vy = p.vy * dr + p.g * dt;
+    const px = p.x, py = p.y;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.flip += p.vf * dt; p.life -= dt;
+    if (p.type === 'rocket' && (p.vy > -1.2 || p.y <= p.ty)){ explode(p.x, p.y, p.palette); continue; }
+    if (p.life <= 0 || p.y > fx.H + 40) continue;
+    fx.parts.push(p);
+    c.globalAlpha = p.alpha * (p.type === 'conf' ? Math.min(1, p.life / 25) : Math.max(0, p.life / p.max));
+    if (p.type === 'dot'){
+      c.fillStyle = p.color; c.beginPath(); c.arc(p.x, p.y, p.size, 0, 6.2832); c.fill();
+    } else if (p.type === 'puff'){
+      const r = p.size * (1.7 - 0.7 * p.life / p.max);
+      const gr = c.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+      gr.addColorStop(0, p.color); gr.addColorStop(1, 'rgba(236,234,228,0)');
+      c.fillStyle = gr; c.beginPath(); c.arc(p.x, p.y, r, 0, 6.2832); c.fill();
+    } else if (p.type === 'conf'){
+      c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.scale(1, Math.cos(p.flip));
+      c.fillStyle = p.color; c.fillRect(-p.size / 2, -p.size * 0.8, p.size, p.size * 1.6); c.restore();
+    } else {
+      c.strokeStyle = p.color; c.lineWidth = p.size; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(px - p.vx * 1.6, py - p.vy * 1.6); c.lineTo(p.x, p.y); c.stroke();
+    }
+  }
+  c.globalAlpha = 1;
+  fx.raf = fx.parts.length ? requestAnimationFrame(tick) : 0;
+}
+function chalkBurst(x, y){
+  for (let i = 0; i < 120; i++){
+    const a = rnd(0, 6.2832), v = 1 + Math.pow(Math.random(), 2) * 10;
+    spawn({type:'dot', x, y, vx:Math.cos(a) * v, vy:Math.sin(a) * v * 0.75, drag:0.9, g:0.03, life:rnd(50, 100), size:rnd(0.8, 3), alpha:rnd(0.25, 0.85)});
+  }
+  for (let i = 0; i < 14; i++){
+    const a = rnd(0, 6.2832), v = rnd(0.4, 2.8);
+    spawn({type:'puff', x, y, vx:Math.cos(a) * v, vy:Math.sin(a) * v * 0.7, drag:0.93, life:rnd(70, 105), size:rnd(16, 40), color:'rgba(236,234,228,.22)'});
+  }
+}
+function chalkDrift(x, y, w){
+  for (let i = 0; i < 45; i++){
+    spawn({type:'dot', x:x + rnd(-w, w), y:y + rnd(-w * 0.4, w * 0.4), vx:rnd(-0.3, 0.3), vy:rnd(0.2, 0.8), drag:0.99, g:0.004, life:rnd(70, 120), size:rnd(0.6, 1.8), alpha:rnd(0.2, 0.5)});
+  }
+}
+const CONF = [CHALK, SILVER, GRAPHITE, GOLD, '#B9BDC2', PALE];
+function cannon(x, y, dir, n){
+  for (let i = 0; i < n; i++){
+    const a = (dir > 0 ? -62 : -118) * Math.PI / 180 + rnd(-0.32, 0.32), v = rnd(9, 17);
+    spawn({type:'conf', x, y, vx:Math.cos(a) * v, vy:Math.sin(a) * v, g:0.22, drag:0.982, life:rnd(150, 220), size:rnd(5, 9), rot:rnd(0, 6), vr:rnd(-0.18, 0.18), flip:rnd(0, 6), vf:rnd(0.12, 0.32), color:pick(CONF)});
+  }
+}
+function confRain(n){
+  for (let i = 0; i < n; i++){
+    spawn({type:'conf', x:rnd(0, fx.W), y:rnd(-60, -10), vx:rnd(-0.8, 0.8), vy:rnd(1, 3), g:0.04, drag:0.99, life:rnd(200, 260), size:rnd(5, 8), rot:rnd(0, 6), vr:rnd(-0.1, 0.1), flip:rnd(0, 6), vf:rnd(0.1, 0.25), color:pick(CONF)});
+  }
+}
+function rocket(){
+  const pal = pick([[CHALK, PALE], [GOLD, PALE], [CHALK, SILVER], [GOLD, CHALK]]);
+  const ty = rnd(fx.H * 0.12, fx.H * 0.42);
+  spawn({type:'rocket', x:rnd(fx.W * 0.12, fx.W * 0.88), y:fx.H + 6, vx:rnd(-0.6, 0.6), vy:-Math.sqrt(2 * 0.12 * (fx.H - ty)) * 1.05, g:0.12, drag:1, life:400, size:2, color:PALE, ty, palette:pal});
+}
+function explode(x, y, pal){
+  const n = 70;
+  for (let i = 0; i < n; i++){
+    const a = i / n * 6.2832 + rnd(-0.05, 0.05), v = rnd(2.2, 5.2);
+    spawn({type:'spark', x, y, vx:Math.cos(a) * v, vy:Math.sin(a) * v, g:0.045, drag:0.965, life:rnd(55, 95), size:rnd(1.4, 2.4), color:pick(pal)});
+  }
+  spawn({type:'puff', x, y, life:22, size:26, color:'rgba(243,218,146,.55)'});
+}
+
+function playInter(style, info){
+  const phrase = info.record ? `Nouveau record sur ${info.exName} !` : pick(PHRASES);
+  const rec = info.record ? ' rec' : '';
+  const next = `<p class="fx-next">Suivant<b>${h(info.nextName)}</b>${h(info.nextTarget)}</p>`;
+  const rm = reduceMotion();
+  if (style === 'chalk'){
+    openFx('inter', 'fx-chalk' + rec, `<p class="fx-phrase">${h(phrase)}</p><span class="chalk-line"></span>${next}`);
+    if (!rm){
+      const r = fx.stage.querySelector('.fx-phrase').getBoundingClientRect();
+      const cy = r.top + r.height / 2;
+      later(60, () => chalkBurst(fx.W / 2, cy));
+      later(320, () => chalkDrift(fx.W / 2, cy, Math.min(fx.W, 420) / 2));
+    }
+    later(2100, () => closeFx());
+  } else if (style === 'slam'){
+    const words = info.record ? ['Record', 'battu\u00a0!'] : (info.done === 1 ? ['Et', 'd’un.'] : ['Et', 'de', (NUM_WORDS[info.done] || info.done) + '.']);
+    const impacts = words.map((w, k) => `fx-shake .16s ease-out ${(0.21 + k * 0.16).toFixed(2)}s`).join(',');
+    const end = 0.05 + (words.length - 1) * 0.16 + 0.26;
+    openFx('inter', 'fx-slam' + rec, `<span class="slam-bg" aria-hidden="true">${info.done}</span>
+      <p class="slam-l" style="animation:${impacts}">${words.map((w, k) => `<span class="w" style="--d:${k}">${h(w)}</span>`).join(' ')}</p>
+      <span class="slam-bar" style="--bar:${(end + 0.08).toFixed(2)}s"></span>
+      <div style="--nxt:${(end + 0.2).toFixed(2)}s" class="fx-slam-next">${next}</div>`);
+    later(2050, () => closeFx());
+  } else {
+    const C = 2 * Math.PI * 50, n = Math.max(1, info.total);
+    const from = Math.max(0, info.done - 1) / n, to = Math.min(n, info.done) / n;
+    let ticks = '';
+    if (n > 1) for (let k = 0; k < n; k++){
+      const a = k / n * 2 * Math.PI;
+      ticks += `<line x1="${(60 + 44 * Math.cos(a)).toFixed(2)}" y1="${(60 + 44 * Math.sin(a)).toFixed(2)}" x2="${(60 + 56 * Math.cos(a)).toFixed(2)}" y2="${(60 + 56 * Math.sin(a)).toFixed(2)}"/>`;
+    }
+    openFx('inter', 'fx-ring' + rec, `<div class="ring-wrap"><span class="ring-pulse"></span>
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-bg" cx="60" cy="60" r="50"/>
+          <circle class="ring-fg" cx="60" cy="60" r="50" style="stroke-dasharray:${C.toFixed(2)};stroke-dashoffset:${(C * (1 - to)).toFixed(2)};--o1:${(C * (1 - from)).toFixed(2)};--o2:${(C * (1 - to)).toFixed(2)}"/>
+          <g class="ring-ticks">${ticks}</g></svg>
+        <div class="ring-num"><b id="ring-n">${rm ? info.done : Math.max(0, info.done - 1)}</b><small>sur ${n} exercices</small></div>
+      </div>
+      <p class="fx-phrase">${h(phrase)}</p>${next}`);
+    if (!rm) later(740, () => { const b = document.getElementById('ring-n'); if (b){ b.textContent = info.done; b.classList.add('pop'); } });
+    later(2200, () => closeFx());
+  }
+}
+
+function countUps(delayMs){
+  fx.stage.querySelectorAll('[data-count]').forEach(el => {
+    const to = +el.dataset.count, tonnes = el.dataset.fmt === 'vol' && to >= 1000;
+    const f = v => tonnes ? fmt(Math.round(v / 100) / 10) : fmt(Math.round(v));
+    if (reduceMotion()){ el.textContent = f(to); return; }
+    later(delayMs, () => {
+      const t0 = performance.now(), dur = 950;
+      const step = now => {
+        if (!fx.open) return;
+        const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        el.textContent = f(to * e);
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  });
+}
+function finHtml(s, hero){
+  const vol = Math.round(s.volume), unit = vol >= 1000 ? 't' : 'kg';
+  const stats = hero
+    ? `<p class="fin-hero"><b data-count="${vol}" data-fmt="vol">0</b><span class="u">${unit}</span></p>
+       <p class="fin-hero-l">soulevées aujourd’hui</p>`
+    : '';
+  const grid = hero
+    ? `<div class="fin-stats two"><div><b data-count="${s.minutes}">0</b><small>minutes</small></div><div><b data-count="${s.sets}">0</b><small>séries</small></div></div>`
+    : `<div class="fin-stats"><div><b data-count="${s.minutes}">0</b><small>minutes</small></div><div><b data-count="${s.sets}">0</b><small>séries</small></div><div><b data-count="${vol}" data-fmt="vol">0</b><small>${vol >= 1000 ? 'tonnes' : 'kg'}</small></div></div>`;
+  const recs = s.records.length
+    ? `<p class="fin-rec">${s.records.length > 1 ? 'Nouveaux records' : 'Nouveau record'} : ${h(s.records.slice(0, 3).join(', '))}${s.records.length > 3 ? '…' : ''}</p>` : '';
+  return `${stats}<h2 class="fin-t">Séance terminée</h2><p class="fin-s">${h(s.programName)}. ${h(pick(FIN_SUBS))}</p>${grid}${recs}
+    <button class="btn primary fin-btn" data-action="fx-close">Voir ma progression</button>`;
+}
+const STAR = '<path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8Z"/>';
+function medalHtml(){
+  const db = `<rect x="-34" y="-2.6" width="68" height="5.2" rx="2"/><rect x="-19.4" y="-5.5" width="2.4" height="11" rx="1"/><rect x="17" y="-5.5" width="2.4" height="11" rx="1"/><rect x="-27" y="-22" width="7" height="44" rx="2.4"/><rect x="20" y="-22" width="7" height="44" rx="2.4"/><rect x="-33.5" y="-14" width="5" height="28" rx="2"/><rect x="28.5" y="-14" width="5" height="28" rx="2"/>`;
+  const sparks = [['-14%','48%','0.9s','13px'], ['98%','38%','1.25s','11px'], ['92%','86%','1.6s','14px'], ['-6%','86%','1.9s','10px'], ['78%','8%','2.2s','9px']]
+    .map(([x, y, d, sz]) => `<svg class="spk" style="--x:${x};--y:${y};--d:${d};--s:${sz}" viewBox="0 0 10 10">${STAR}</svg>`).join('');
+  return `<div class="medal-wrap"><svg class="medal" viewBox="0 0 120 156" aria-hidden="true">
+    <defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DA92"/><stop offset=".55" stop-color="#D9B45A"/><stop offset="1" stop-color="#9C7A2C"/></linearGradient>
+    <clipPath id="mclip"><circle cx="60" cy="108" r="40"/></clipPath></defs>
+    <g class="medal-swing">
+      <path d="M30 0 H50 L68 72 H52 Z" fill="#3A3D42"/><path d="M90 0 H70 L52 72 H68 Z" fill="#5A5E63"/>
+      <circle cx="60" cy="108" r="44" fill="#8E6E26"/><circle cx="60" cy="108" r="40" fill="url(#mg)"/>
+      <circle cx="60" cy="108" r="33" fill="none" stroke="#8E6E26" stroke-width="1.2" opacity=".6"/>
+      <g transform="translate(60 108) scale(.6)" fill="#7A5C1E">${db}</g>
+      <g clip-path="url(#mclip)"><rect class="medal-shine" x="0" y="60" width="16" height="100" fill="#FFF7E0" opacity=".55"/></g>
+    </g></svg>${sparks}</div>`;
+}
+function playFinal(style, s){
+  const rm = reduceMotion();
+  if (style === 'medal'){
+    openFx('final', 'fx-fin fx-medal', medalHtml() + finHtml(s, false));
+    countUps(1250);
+  } else if (style === 'fireworks'){
+    openFx('final', 'fx-fin fx-fire', finHtml(s, true));
+    countUps(450);
+    if (!rm){
+      [0, 350, 800, 1200, 1700, 2300, 2900].forEach(t => later(t, rocket));
+      for (let t = 3700; t < 12000; t += 1300) later(t, rocket);
+    }
+  } else {
+    openFx('final', 'fx-fin fx-conf', finHtml(s, false));
+    countUps(550);
+    if (!rm){
+      later(60, () => { cannon(0, fx.H + 10, 1, 90); cannon(fx.W, fx.H + 10, -1, 90); });
+      later(700, () => { cannon(0, fx.H + 10, 1, 45); cannon(fx.W, fx.H + 10, -1, 45); });
+      later(1400, () => confRain(45));
+      later(2800, () => confRain(25));
+    }
+  }
+}
+
+function maybeInter(from){
+  const d = state.draft;
+  if (!d || state.prefs.inter === 'none' || !d.items[from] || !d.items[from].sets.length) return;
+  d.cheered = d.cheered || [];
+  if (d.cheered.includes(from)) return;
+  d.cheered.push(from); saveDraft();
+  const items = d.plan.items, nx = items[d.idx];
+  const done = d.items.filter(x => x.sets.length).length;
+  playInter(state.prefs.inter, {
+    done:Math.max(1, done), total:items.length, exName:exName(items[from].ex),
+    nextName:exName(nx.ex), nextTarget:`${nx.sets} × ${nx.label || nx.reps}`,
+    record:isRecord(items[from].ex, d.items[from].sets, d.id),
+  });
+}
+
 /* ---------- Rendu ---------- */
 let lastView = null;
 function render(){
@@ -822,7 +1232,7 @@ function render(){
   top.hidden = !!PARENT[state.view];
   for (const t of top.querySelectorAll('.tab')) t.setAttribute('aria-selected', String(t.dataset.id === state.view));
   const v = document.getElementById('view');
-  const views = {session:viewSession, editor:viewEditor, picker:viewPicker, newex:viewNewEx, progress:viewProgress, programs:viewPrograms};
+  const views = {session:viewSession, editor:viewEditor, picker:viewPicker, newex:viewNewEx, progress:viewProgress, programs:viewPrograms, settings:viewSettings};
   v.innerHTML = (views[state.view] || viewPrograms)();
   state.flash = null;
   if (state.view === 'progress') drawChart();
@@ -868,10 +1278,15 @@ function finishSession(){
   if (!items.length){ setView('programs'); render(); toast('Séance vide, rien n’a été enregistré'); return; }
   const s = {id:d.id, date:new Date().toISOString(), program:d.program, programName:d.plan.name,
     minutes:Math.max(1, Math.round((Date.now() - d.startedAt) / 60000)), items};
+  const records = items.filter(it => isRecord(it.ex, it.sets, s.id)).map(it => it.name);
   state.sessions.push(s); persist();
   state.openSession = s.id;
   state.progEx = items[0].ex; state.metric = defaultMetric(items[0].ex);
-  setView('progress'); render(); toast('Séance enregistrée');
+  setView('progress'); render();
+  if (state.prefs.final === 'none') toast('Séance enregistrée');
+  else playFinal(state.prefs.final, {programName:s.programName, minutes:s.minutes,
+    sets:items.reduce((a, it) => a + it.sets.length, 0),
+    volume:items.reduce((a, it) => a + it.sets.reduce((b, x) => b + x.w * x.r, 0), 0), records});
 }
 
 /* ---------- Actions : programmes ---------- */
@@ -964,6 +1379,7 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-action]');
   if (!b || b.disabled) return;
   const a = b.dataset.action, id = b.dataset.id, d = state.draft, e = state.edit;
+  if (a === 'fx-close'){ closeFx(); return; }
   const prev = state.confirm;
   state.confirm = null; clearTimeout(confirmT);
   const k = b.dataset.k !== undefined ? +b.dataset.k : -1;
@@ -999,7 +1415,21 @@ document.addEventListener('click', ev => {
       else arm('rm' + k);
       break;
     case 'prev': if (d && d.idx > 0){ d.idx--; saveDraft(); } break;
-    case 'next': if (d && d.idx < d.plan.items.length - 1){ d.idx++; saveDraft(); } break;
+    case 'next':
+      if (d && d.idx < d.plan.items.length - 1){ const from = d.idx; d.idx++; saveDraft(); render(); maybeInter(from); return; }
+      break;
+
+    case 'del-prog':
+      if (prev === 'delp' + id){
+        state.programs = state.programs.filter(p => p.id !== id); persistPrograms();
+        if (state.openProgram === id) state.openProgram = null;
+        toast('Programme supprimé');
+      } else arm('delp' + id);
+      break;
+    case 'pref-inter': state.prefs.inter = id; LS.set(K.prefs, state.prefs); break;
+    case 'pref-final': state.prefs.final = id; LS.set(K.prefs, state.prefs); break;
+    case 'preview-inter': if (state.prefs.inter !== 'none') playInter(state.prefs.inter, SAMPLE_INTER); if (!prev) return; break;
+    case 'preview-final': if (state.prefs.final !== 'none') playFinal(state.prefs.final, SAMPLE_FINAL); if (!prev) return; break;
 
     case 'ed-cancel': state.edit = null; setView('programs'); break;
     case 'ed-save': if (!saveEditor()) return; break;
@@ -1101,6 +1531,7 @@ setInterval(() => {
 }
 
 /* ---------- Démarrage ---------- */
+fxInit();
 if (state.draft) setView('session');
 render();
 
