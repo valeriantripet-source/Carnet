@@ -407,13 +407,26 @@ main{flex:1;display:flex;flex-direction:column}
 <body>
 <div id="splash" aria-hidden="true">
   <div class="sp-zoom"><div class="sp-shk"><p class="sp-ph">
-    <span class="sp-ln"><span class="sp-w" style="--d:.15s">Prêt</span></span>
-    <span class="sp-ln"><span class="sp-w" style="--d:.6s">à tout</span></span>
-    <span class="sp-ln"><span class="sp-w sp-big" style="--d:1.1s"><span class="sp-crk"><span class="sp-half a">casser</span><span class="sp-half b">casser</span><svg class="sp-crack" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="0,58 18,52 31,63 47,47 60,56 76,42 100,46"/></svg></span></span>&#8239;<span class="sp-q">?</span></span>
+    <span class="sp-ln"><span class="sp-w" id="sp-1" style="--d:.15s">Prêt</span></span>
+    <span class="sp-ln"><span class="sp-w" id="sp-2" style="--d:.6s">à tout</span></span>
+    <span class="sp-ln"><span class="sp-w sp-big" style="--d:1.1s"><span class="sp-crk"><span class="sp-half a" id="sp-3a">casser</span><span class="sp-half b" id="sp-3b">casser</span><svg class="sp-crack" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="0,58 18,52 31,63 47,47 60,56 76,42 100,46"/></svg></span></span><span id="sp-gap">&#8239;</span><span class="sp-q">?</span></span>
   </p></div></div>
   <canvas id="sp-cv"></canvas>
   <div class="sp-flash"></div>
 </div>
+<script>
+(function(){
+  var L = {fr:['Prêt','à tout','casser','\u202f'], de:['Bereit','alles zu','zerlegen',''], en:['Ready','to break','limits',''], it:['Pronto','a spaccare','tutto','']};
+  var lang;
+  try { lang = (JSON.parse(localStorage.getItem('carnet.v1.prefs')) || {}).lang; } catch(e){}
+  if (!L[lang]){ var n = (navigator.language || 'fr').slice(0, 2).toLowerCase(); lang = L[n] ? n : 'fr'; }
+  document.documentElement.lang = lang;
+  var w = L[lang], set = function(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; };
+  set('sp-1', w[0]); set('sp-2', w[1]); set('sp-3a', w[2]); set('sp-3b', w[2]); set('sp-gap', w[3]);
+  var max = Math.max(w[0].length, w[1].length, w[2].length + w[3].length + 1);
+  if (max > 8){ var ph = document.querySelector('.sp-ph'); if (ph) ph.style.fontSize = 'calc(min(24vw,16.5vh,150px) * ' + (8 / max).toFixed(3) + ')'; }
+})();
+</script>
 <div id="app">
   <header class="topbar" id="topbar">
     <span class="mark">Carnet</span>
@@ -433,6 +446,329 @@ main{flex:1;display:flex;flex-direction:column}
 <script>
 (() => {
 'use strict';
+
+/* ---------- Langues ---------- */
+const LANGS = [['fr', 'Français'], ['de', 'Deutsch'], ['en', 'English'], ['it', 'Italiano']];
+const LOCALES = {fr:'fr-FR', de:'de-DE', en:'en-GB', it:'it-IT'};
+const detectLang = () => { const l = (navigator.language || 'fr').slice(0, 2).toLowerCase(); return LOCALES[l] ? l : 'fr'; };
+const P = (one, other) => n => (n > 1 ? other : one).replace('{n}', n);
+const I18N = {
+fr:{
+  'nav.programs':'Programmes', 'nav.progress':'Progrès', 'nav.weight':'Poids', 'nav.settings':'Réglages', 'nav.sections':'Sections',
+  'res.title':'Séance en cours', 'btn.resume':'Reprendre', 'btn.confirm':'Confirmer', 'btn.abandon':'Abandonner',
+  'tag.next':'Prochaine', 'prog.rest':'Repos de {r} entre les séries.', 'prog.busy':'Termine ou abandonne la séance en cours pour en commencer une autre.',
+  'btn.start':'Commencer', 'btn.edit':'Modifier', 'btn.delete':'Supprimer', 'prog.none':'Aucun programme',
+  'prog.noneHint':'Crée ton premier programme ou réinstalle ceux d’origine.', 'btn.newProg':'Créer un programme', 'btn.restore':'Réinstaller les programmes d’origine',
+  'last.never':'Jamais faite', 'last.today':'Faite aujourd’hui', 'last.yesterday':'Faite hier', 'last.days':'Faite il y a {n} jours',
+  'n.sets':P('{n} série', '{n} séries'), 'n.sessions':P('{n} séance', '{n} séances'), 'n.weighins':P('{n} pesée', '{n} pesées'),
+  'u.sessions':P('séance', 'séances'), 'u.days':P('jour', 'jours'),
+  'timer.idleT':'Repos prévu', 'timer.idleS':'après chaque série', 'timer.doneT':'C’est reparti', 'timer.doneS':'repos terminé', 'timer.runT':'Repos', 'timer.of':'sur {t}',
+  's.target':'Objectif {s} × {r}', 's.last':'Dernière fois, ', 's.first':'Première fois sur cet exercice', 'bw.abbr':'PDC',
+  'unit.lest':'kg de lest', 'unit.reps':'reps', 'unit.perDb':'kg par haltère', 'unit.sets':'séries', 'unit.minutes':'minutes', 'unit.tonnes':'tonnes',
+  'a.dec':'Diminuer {w}', 'a.inc':'Augmenter {w}', 'w.load':'la charge', 'w.reps':'les répétitions',
+  's.validate':'Valider la série {n}', 's.noSets':'Aucune série pour l’instant', 's.setAria':'Série {k}, {v}, toucher pour retirer', 's.remove':'Retirer ?',
+  'btn.finish':'Terminer', 'a.back':'Retour aux programmes', 'a.prevEx':'Exercice précédent', 'a.nextEx':'Exercice suivant',
+  'ed.new':'Nouveau programme', 'ed.edit':'Modifier le programme', 'btn.save':'Enregistrer', 'ed.name':'Nom du programme', 'ed.namePh':'Ex. Pecs et dos',
+  'ed.rest':'Repos entre les séries', 'a.lessRest':'Moins de repos', 'a.moreRest':'Plus de repos', 'ed.exercises':'Exercices',
+  'a.up':'Monter', 'a.down':'Descendre', 'a.removeEx':'Retirer {n}', 'a.less':'Moins de {l}', 'a.more':'Plus de {l}',
+  'ed.noEx':'Aucun exercice pour l’instant.', 'btn.addEx':'Ajouter un exercice', 'ed.delete':'Supprimer le programme', 'btn.confirmDel':'Confirmer la suppression', 'a.cancel':'Annuler et revenir',
+  'pk.search':'Rechercher', 'pk.searchAria':'Rechercher un exercice', 'btn.newEx':'Créer un exercice', 'pk.added':'déjà ajouté',
+  'pk.none':'Aucun exercice ne correspond. Tu peux le créer.', 'a.backProg':'Retour au programme',
+  'nx.title':'Nouvel exercice', 'btn.create':'Créer', 'nx.name':'Nom', 'nx.namePh':'Ex. Développé Smith', 'nx.group':'Groupe musculaire', 'nx.type':'Type',
+  'nx.load':'Avec charge', 'nx.bw':'Poids du corps', 'nx.step':'Palier de charge',
+  'nx.bwNote':'Au poids du corps, la charge que tu saisis correspond au lest (0 sans lest).', 'nx.stepNote':'Le palier sert aux boutons + et − pendant la séance.', 'a.backList':'Retour à la liste',
+  'g.Pectoraux':'Pectoraux', 'g.Dos':'Dos', 'g.Épaules':'Épaules', 'g.Bras':'Bras', 'g.Jambes':'Jambes', 'g.Abdos':'Abdos', 'g.Autre':'Autre',
+  'pr.ex':'Exercices', 'pr.cal':'Régularité', 'pr.view':'Vue', 'pr.emptyT':'Pas encore de séance', 'pr.emptyS':'Ta progression s’affichera ici dès ta première séance terminée.',
+  'btn.choose':'Choisir un programme', 'pr.metric':'Mesure affichée', 'pr.history':'Historique', 'pr.exercise':'Exercice',
+  'm.e1rm':'1RM', 'm.max':'Charge', 'm.vol':'Volume', 'm.reps':'Reps', 'm.rel':'Relatif',
+  'mc.e1rm':'1RM estimé à partir de ta meilleure série de chaque séance (formule d’Epley).', 'mc.max':'Charge la plus lourde soulevée à chaque séance.',
+  'mc.vol':'Charge × répétitions, toutes séries confondues.', 'mc.reps':'Plus grand nombre de répétitions en une série.',
+  'mc.rel':'1RM estimé en pourcentage de ton poids de corps du jour. S’il reste stable pendant que ton poids baisse, tu gardes ta force.',
+  'pr.bwPart':' Ici, la charge inclut environ 65 % de ton poids de corps.', 'pr.bwFull':' Ici, la charge inclut ton poids de corps.',
+  'pr.bwNone':' Ici, la charge correspond au lest. Ajoute une pesée dans l’onglet Poids pour voir la charge réelle.',
+  'pr.relNone':'Ajoute une pesée dans l’onglet Poids pour voir ta force relative.', 'pr.noData':'Pas de donnée pour cette mesure.',
+  'st.best':'Record', 'st.last':'Dernière', 'st.change':'Évolution', 'pr.delSess':'Supprimer la séance', 'fb.session':'Séance', 'fb.exercise':'Exercice',
+  'w.weight':'Poids', 'w.date':'Date', 'a.decW':'Diminuer le poids', 'a.incW':'Augmenter le poids', 'a.kg':'Poids en kg', 'a.dateW':'Date de la pesée',
+  'w.update':'Mettre à jour cette pesée', 'w.save':'Enregistrer la pesée', 'w.note':'Ton poids sert aussi à calculer ta force relative et la charge réelle des tractions et des dips.',
+  'w.progress':'Progression', 'w.period':'Période', 'r.30':'30 jours', 'r.90':'3 mois', 'r.all':'Tout', 'w.current':'Actuel', 'w.since':'Depuis le début',
+  'w.list':'Pesées', 'w.tapHint':'Touche une pesée pour la corriger.', 'a.delW':'Supprimer la pesée', 'w.none':'Aucune pesée sur cette période.', 'w.chart':'Poids de corps',
+  'cal.week':'Cette semaine', 'cal.month':'Ce mois-ci', 'cal.streak':'D’affilée', 'a.prevM':'Mois précédent', 'a.nextM':'Mois suivant', 'cal.rest':'Repos',
+  'st.lang':'Langue', 'st.session':'Séance', 'sw.wake':'Garder l’écran allumé', 'sw.wakeS':'Pendant une séance en cours', 'sw.vib':'Vibrations', 'sw.vibS':'Animations et fin du repos',
+  'sw.sound':'Son à la fin du repos', 'sw.soundS':'Deux bips quand il est temps de repartir', 'st.anim':'Animations', 'st.between':'Entre les exercices', 'st.end':'Fin de séance', 'btn.preview':'Voir l’aperçu',
+  'i.ring':'Anneau', 'i.ringD':'Un anneau se remplit à chaque exercice terminé, avec un message et l’exercice suivant.',
+  'i.chalk':'Craie', 'i.chalkD':'Un nuage de craie explose derrière un message de motivation.',
+  'i.slam':'Typo', 'i.slamD':'Les mots s’écrasent à l’écran, « Et de deux. », avec une secousse à chaque impact.',
+  'i.none':'Aucune', 'i.noneD':'Passage direct à l’exercice suivant.',
+  'f.confetti':'Confettis', 'f.confettiD':'Deux canons de confettis, puis le bilan de ta séance qui s’affiche.',
+  'f.medal':'Médaille', 'f.medalD':'Une médaille tombe, se balance et brille au-dessus de ton bilan.',
+  'f.fireworks':'Artifice', 'f.fireworksD':'Un feu d’artifice autour du poids total soulevé pendant la séance.', 'f.noneD':'Retour direct à ta progression.',
+  'bk.title':'Sauvegarde', 'bk.note':'Tes séances, pesées et programmes sont enregistrés sur ce téléphone. Exporte une sauvegarde de temps en temps pour ne rien perdre.',
+  'bk.export':'Exporter', 'bk.import':'Importer', 'bk.file':'carnet-sauvegarde',
+  'fx.next':'Suivant', 'fx.ringOf':'sur {n} exercices', 'fx.record':'Nouveau record sur {ex} !', 'fin.title':'Séance terminée', 'fin.lifted':'soulevées aujourd’hui',
+  'fin.rec':(n, list) => `${n > 1 ? 'Nouveaux records' : 'Nouveau record'} : ${list}`, 'fin.btn':'Voir ma progression',
+  't.storage':'Stockage plein ou indisponible', 't.badLoad':'Indique une charge valide', 't.badReps':'Indique un nombre de répétitions',
+  't.emptySession':'Séance vide, rien n’a été enregistré', 't.sessionSaved':'Séance enregistrée', 't.progName':'Donne un nom au programme',
+  't.progEmpty':'Ajoute au moins un exercice', 't.progCreated':'Programme créé', 't.progSaved':'Programme enregistré', 't.exAdded':'{ex} ajouté',
+  't.exName':'Donne un nom à l’exercice', 't.badWeight':'Indique un poids valide', 't.badDate':'Choisis une date valide', 't.futureDate':'La date ne peut pas être dans le futur',
+  't.wUpdated':'Pesée mise à jour', 't.wSaved':'Pesée enregistrée', 't.backup':'Sauvegarde téléchargée', 't.badFile':'Ce fichier n’est pas une sauvegarde valide',
+  't.nothing':'Rien de nouveau dans ce fichier', 't.progsImported':P('{n} programme importé', '{n} programmes importés'), 't.sessImported':P('{n} séance importée', '{n} séances importées'),
+  't.abandoned':'Séance abandonnée', 't.restored':'Programmes d’origine réinstallés', 't.progDeleted':'Programme supprimé', 't.wDeleted':'Pesée supprimée',
+  't.sessDeleted':'Séance supprimée', 't.readFail':'Lecture du fichier impossible',
+  'ph':['Exercice bouclé.', 'Propre. On enchaîne.', 'Une de plus dans la poche.', 'Bien tenu.', 'Solide.', 'C’est comme ça qu’on progresse.', 'Garde ce rythme.', 'Travail fait.', 'Rien ne t’arrête.', 'Ça, c’est du sérieux.'],
+  'fin.subs':['Beau travail.', 'Mission accomplie.', 'Tu peux être fier de toi.', 'Encore une de faite.', 'Rien à redire.'],
+  'slam':n => n === 1 ? ['Et', 'd’un.'] : ['Et', 'de', (['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze'][n] || n) + '.'],
+  'slam.rec':['Record', 'battu\u00a0!'],
+},
+de:{
+  'nav.programs':'Programme', 'nav.progress':'Fortschritt', 'nav.weight':'Gewicht', 'nav.settings':'Einstellungen', 'nav.sections':'Bereiche',
+  'res.title':'Laufendes Training', 'btn.resume':'Fortsetzen', 'btn.confirm':'Bestätigen', 'btn.abandon':'Verwerfen',
+  'tag.next':'Als Nächstes', 'prog.rest':'{r} Pause zwischen den Sätzen.', 'prog.busy':'Beende oder verwirf das laufende Training, um ein neues zu starten.',
+  'btn.start':'Starten', 'btn.edit':'Bearbeiten', 'btn.delete':'Löschen', 'prog.none':'Keine Programme',
+  'prog.noneHint':'Erstelle dein erstes Programm oder stelle die ursprünglichen wieder her.', 'btn.newProg':'Programm erstellen', 'btn.restore':'Ursprüngliche Programme wiederherstellen',
+  'last.never':'Noch nie gemacht', 'last.today':'Heute gemacht', 'last.yesterday':'Gestern gemacht', 'last.days':'Vor {n} Tagen gemacht',
+  'n.sets':P('{n} Satz', '{n} Sätze'), 'n.sessions':P('{n} Training', '{n} Trainings'), 'n.weighins':P('{n} Messung', '{n} Messungen'),
+  'u.sessions':P('Training', 'Trainings'), 'u.days':P('Tag', 'Tage'),
+  'timer.idleT':'Geplante Pause', 'timer.idleS':'nach jedem Satz', 'timer.doneT':'Weiter geht’s', 'timer.doneS':'Pause vorbei', 'timer.runT':'Pause', 'timer.of':'von {t}',
+  's.target':'Ziel {s} × {r}', 's.last':'Letztes Mal, ', 's.first':'Erstes Mal bei dieser Übung', 'bw.abbr':'Körpergew.',
+  'unit.lest':'kg Zusatz', 'unit.reps':'Wdh.', 'unit.perDb':'kg pro Hantel', 'unit.sets':'Sätze', 'unit.minutes':'Minuten', 'unit.tonnes':'Tonnen',
+  'a.dec':'{w} verringern', 'a.inc':'{w} erhöhen', 'w.load':'Gewicht', 'w.reps':'Wiederholungen',
+  's.validate':'Satz {n} speichern', 's.noSets':'Noch keine Sätze', 's.setAria':'Satz {k}, {v}, tippen zum Entfernen', 's.remove':'Entfernen?',
+  'btn.finish':'Beenden', 'a.back':'Zurück zu den Programmen', 'a.prevEx':'Vorherige Übung', 'a.nextEx':'Nächste Übung',
+  'ed.new':'Neues Programm', 'ed.edit':'Programm bearbeiten', 'btn.save':'Speichern', 'ed.name':'Programmname', 'ed.namePh':'z. B. Brust und Rücken',
+  'ed.rest':'Pause zwischen den Sätzen', 'a.lessRest':'Weniger Pause', 'a.moreRest':'Mehr Pause', 'ed.exercises':'Übungen',
+  'a.up':'Nach oben', 'a.down':'Nach unten', 'a.removeEx':'{n} entfernen', 'a.less':'Weniger {l}', 'a.more':'Mehr {l}',
+  'ed.noEx':'Noch keine Übungen.', 'btn.addEx':'Übung hinzufügen', 'ed.delete':'Programm löschen', 'btn.confirmDel':'Löschen bestätigen', 'a.cancel':'Abbrechen und zurück',
+  'pk.search':'Suchen', 'pk.searchAria':'Übung suchen', 'btn.newEx':'Übung erstellen', 'pk.added':'bereits hinzugefügt',
+  'pk.none':'Keine passende Übung. Du kannst sie erstellen.', 'a.backProg':'Zurück zum Programm',
+  'nx.title':'Neue Übung', 'btn.create':'Erstellen', 'nx.name':'Name', 'nx.namePh':'z. B. Bankdrücken an der Multipresse', 'nx.group':'Muskelgruppe', 'nx.type':'Typ',
+  'nx.load':'Mit Gewicht', 'nx.bw':'Körpergewicht', 'nx.step':'Gewichtsschritt',
+  'nx.bwNote':'Bei Körpergewichtsübungen ist das eingegebene Gewicht die Zusatzlast (0 ohne).', 'nx.stepNote':'Der Schritt gilt für die Tasten + und − im Training.', 'a.backList':'Zurück zur Liste',
+  'g.Pectoraux':'Brust', 'g.Dos':'Rücken', 'g.Épaules':'Schultern', 'g.Bras':'Arme', 'g.Jambes':'Beine', 'g.Abdos':'Bauch', 'g.Autre':'Sonstiges',
+  'pr.ex':'Übungen', 'pr.cal':'Regelmäßigkeit', 'pr.view':'Ansicht', 'pr.emptyT':'Noch kein Training', 'pr.emptyS':'Dein Fortschritt erscheint hier nach deinem ersten abgeschlossenen Training.',
+  'btn.choose':'Programm wählen', 'pr.metric':'Angezeigter Wert', 'pr.history':'Verlauf', 'pr.exercise':'Übung',
+  'm.e1rm':'1RM', 'm.max':'Gewicht', 'm.vol':'Volumen', 'm.reps':'Wdh.', 'm.rel':'Relativ',
+  'mc.e1rm':'Geschätztes 1RM aus deinem besten Satz jedes Trainings (Epley-Formel).', 'mc.max':'Schwerstes Gewicht in jedem Training.',
+  'mc.vol':'Gewicht × Wiederholungen über alle Sätze.', 'mc.reps':'Meiste Wiederholungen in einem Satz.',
+  'mc.rel':'Geschätztes 1RM in Prozent deines Körpergewichts am Tag. Bleibt es stabil, während dein Gewicht sinkt, behältst du deine Kraft.',
+  'pr.bwPart':' Hier enthält das Gewicht etwa 65 % deines Körpergewichts.', 'pr.bwFull':' Hier enthält das Gewicht dein Körpergewicht.',
+  'pr.bwNone':' Hier entspricht das Gewicht der Zusatzlast. Trage im Tab Gewicht eine Messung ein, um die echte Last zu sehen.',
+  'pr.relNone':'Trage im Tab Gewicht eine Messung ein, um deine relative Kraft zu sehen.', 'pr.noData':'Keine Daten für diesen Wert.',
+  'st.best':'Rekord', 'st.last':'Zuletzt', 'st.change':'Veränderung', 'pr.delSess':'Training löschen', 'fb.session':'Training', 'fb.exercise':'Übung',
+  'w.weight':'Gewicht', 'w.date':'Datum', 'a.decW':'Gewicht verringern', 'a.incW':'Gewicht erhöhen', 'a.kg':'Gewicht in kg', 'a.dateW':'Datum der Messung',
+  'w.update':'Diese Messung aktualisieren', 'w.save':'Messung speichern', 'w.note':'Dein Gewicht dient auch zur Berechnung deiner relativen Kraft und der echten Last bei Klimmzügen und Dips.',
+  'w.progress':'Verlauf', 'w.period':'Zeitraum', 'r.30':'30 Tage', 'r.90':'3 Monate', 'r.all':'Alle', 'w.current':'Aktuell', 'w.since':'Seit Beginn',
+  'w.list':'Messungen', 'w.tapHint':'Tippe auf eine Messung, um sie zu korrigieren.', 'a.delW':'Messung löschen', 'w.none':'Keine Messungen in diesem Zeitraum.', 'w.chart':'Körpergewicht',
+  'cal.week':'Diese Woche', 'cal.month':'Diesen Monat', 'cal.streak':'Am Stück', 'a.prevM':'Vorheriger Monat', 'a.nextM':'Nächster Monat', 'cal.rest':'Ruhetag',
+  'st.lang':'Sprache', 'st.session':'Training', 'sw.wake':'Bildschirm anlassen', 'sw.wakeS':'Während eines Trainings', 'sw.vib':'Vibration', 'sw.vibS':'Animationen und Pausenende',
+  'sw.sound':'Ton am Pausenende', 'sw.soundS':'Zwei Pieptöne, wenn es weitergeht', 'st.anim':'Animationen', 'st.between':'Zwischen den Übungen', 'st.end':'Trainingsende', 'btn.preview':'Vorschau',
+  'i.ring':'Ring', 'i.ringD':'Ein Ring füllt sich nach jeder Übung, mit einer Nachricht und der nächsten Übung.',
+  'i.chalk':'Kreide', 'i.chalkD':'Eine Kreidewolke explodiert hinter einer motivierenden Nachricht.',
+  'i.slam':'Typo', 'i.slamD':'Die Wörter knallen auf den Bildschirm, „Nummer zwei.“, mit einem Ruck bei jedem Aufprall.',
+  'i.none':'Keine', 'i.noneD':'Direkt zur nächsten Übung.',
+  'f.confetti':'Konfetti', 'f.confettiD':'Zwei Konfettikanonen, dann erscheint die Bilanz deines Trainings.',
+  'f.medal':'Medaille', 'f.medalD':'Eine Medaille fällt, schwingt und glänzt über deiner Bilanz.',
+  'f.fireworks':'Feuerwerk', 'f.fireworksD':'Ein Feuerwerk rund um das im Training gehobene Gesamtgewicht.', 'f.noneD':'Direkt zurück zu deinem Fortschritt.',
+  'bk.title':'Sicherung', 'bk.note':'Deine Trainings, Messungen und Programme sind auf diesem Telefon gespeichert. Exportiere ab und zu eine Sicherung, damit nichts verloren geht.',
+  'bk.export':'Exportieren', 'bk.import':'Importieren', 'bk.file':'trainingsbuch-sicherung',
+  'fx.next':'Als Nächstes', 'fx.ringOf':'von {n} Übungen', 'fx.record':'Neuer Rekord bei {ex}!', 'fin.title':'Training beendet', 'fin.lifted':'heute gehoben',
+  'fin.rec':(n, list) => `${n > 1 ? 'Neue Rekorde' : 'Neuer Rekord'}: ${list}`, 'fin.btn':'Meinen Fortschritt ansehen',
+  't.storage':'Speicher voll oder nicht verfügbar', 't.badLoad':'Gib ein gültiges Gewicht ein', 't.badReps':'Gib eine Anzahl Wiederholungen ein',
+  't.emptySession':'Leeres Training, nichts gespeichert', 't.sessionSaved':'Training gespeichert', 't.progName':'Gib dem Programm einen Namen',
+  't.progEmpty':'Füge mindestens eine Übung hinzu', 't.progCreated':'Programm erstellt', 't.progSaved':'Programm gespeichert', 't.exAdded':'{ex} hinzugefügt',
+  't.exName':'Gib der Übung einen Namen', 't.badWeight':'Gib ein gültiges Gewicht ein', 't.badDate':'Wähle ein gültiges Datum', 't.futureDate':'Das Datum darf nicht in der Zukunft liegen',
+  't.wUpdated':'Messung aktualisiert', 't.wSaved':'Messung gespeichert', 't.backup':'Sicherung heruntergeladen', 't.badFile':'Diese Datei ist keine gültige Sicherung',
+  't.nothing':'Nichts Neues in dieser Datei', 't.progsImported':P('{n} Programm importiert', '{n} Programme importiert'), 't.sessImported':P('{n} Training importiert', '{n} Trainings importiert'),
+  't.abandoned':'Training verworfen', 't.restored':'Ursprüngliche Programme wiederhergestellt', 't.progDeleted':'Programm gelöscht', 't.wDeleted':'Messung gelöscht',
+  't.sessDeleted':'Training gelöscht', 't.readFail':'Datei konnte nicht gelesen werden',
+  'ph':['Übung erledigt.', 'Sauber. Weiter geht’s.', 'Wieder eine geschafft.', 'Gut durchgezogen.', 'Stark.', 'So kommt man voran.', 'Halte dieses Tempo.', 'Arbeit erledigt.', 'Nichts hält dich auf.', 'Das ist ernsthafte Arbeit.'],
+  'fin.subs':['Starke Leistung.', 'Mission erfüllt.', 'Du kannst stolz auf dich sein.', 'Wieder eins geschafft.', 'Nichts auszusetzen.'],
+  'slam':n => ['Nummer', (['null','eins','zwei','drei','vier','fünf','sechs','sieben','acht','neun','zehn','elf','zwölf','dreizehn','vierzehn','fünfzehn'][n] || n) + '.'],
+  'slam.rec':['Neuer', 'Rekord!'],
+},
+en:{
+  'nav.programs':'Programs', 'nav.progress':'Progress', 'nav.weight':'Weight', 'nav.settings':'Settings', 'nav.sections':'Sections',
+  'res.title':'Workout in progress', 'btn.resume':'Resume', 'btn.confirm':'Confirm', 'btn.abandon':'Discard',
+  'tag.next':'Up next', 'prog.rest':'{r} rest between sets.', 'prog.busy':'Finish or discard the current workout to start another one.',
+  'btn.start':'Start', 'btn.edit':'Edit', 'btn.delete':'Delete', 'prog.none':'No programs',
+  'prog.noneHint':'Create your first program or restore the original ones.', 'btn.newProg':'Create a program', 'btn.restore':'Restore the original programs',
+  'last.never':'Never done', 'last.today':'Done today', 'last.yesterday':'Done yesterday', 'last.days':'Done {n} days ago',
+  'n.sets':P('{n} set', '{n} sets'), 'n.sessions':P('{n} workout', '{n} workouts'), 'n.weighins':P('{n} weigh-in', '{n} weigh-ins'),
+  'u.sessions':P('workout', 'workouts'), 'u.days':P('day', 'days'),
+  'timer.idleT':'Planned rest', 'timer.idleS':'after each set', 'timer.doneT':'Back to it', 'timer.doneS':'rest over', 'timer.runT':'Rest', 'timer.of':'of {t}',
+  's.target':'Target {s} × {r}', 's.last':'Last time, ', 's.first':'First time on this exercise', 'bw.abbr':'BW',
+  'unit.lest':'kg added', 'unit.reps':'reps', 'unit.perDb':'kg per dumbbell', 'unit.sets':'sets', 'unit.minutes':'minutes', 'unit.tonnes':'tonnes',
+  'a.dec':'Decrease {w}', 'a.inc':'Increase {w}', 'w.load':'the weight', 'w.reps':'the reps',
+  's.validate':'Log set {n}', 's.noSets':'No sets yet', 's.setAria':'Set {k}, {v}, tap to remove', 's.remove':'Remove?',
+  'btn.finish':'Finish', 'a.back':'Back to programs', 'a.prevEx':'Previous exercise', 'a.nextEx':'Next exercise',
+  'ed.new':'New program', 'ed.edit':'Edit program', 'btn.save':'Save', 'ed.name':'Program name', 'ed.namePh':'E.g. Chest and back',
+  'ed.rest':'Rest between sets', 'a.lessRest':'Less rest', 'a.moreRest':'More rest', 'ed.exercises':'Exercises',
+  'a.up':'Move up', 'a.down':'Move down', 'a.removeEx':'Remove {n}', 'a.less':'Fewer {l}', 'a.more':'More {l}',
+  'ed.noEx':'No exercises yet.', 'btn.addEx':'Add an exercise', 'ed.delete':'Delete program', 'btn.confirmDel':'Confirm deletion', 'a.cancel':'Cancel and go back',
+  'pk.search':'Search', 'pk.searchAria':'Search for an exercise', 'btn.newEx':'Create an exercise', 'pk.added':'already added',
+  'pk.none':'No matching exercise. You can create it.', 'a.backProg':'Back to the program',
+  'nx.title':'New exercise', 'btn.create':'Create', 'nx.name':'Name', 'nx.namePh':'E.g. Smith machine press', 'nx.group':'Muscle group', 'nx.type':'Type',
+  'nx.load':'Weighted', 'nx.bw':'Bodyweight', 'nx.step':'Weight increment',
+  'nx.bwNote':'For bodyweight exercises, the weight you enter is the added load (0 without).', 'nx.stepNote':'The increment is used by the + and − buttons during a workout.', 'a.backList':'Back to the list',
+  'g.Pectoraux':'Chest', 'g.Dos':'Back', 'g.Épaules':'Shoulders', 'g.Bras':'Arms', 'g.Jambes':'Legs', 'g.Abdos':'Abs', 'g.Autre':'Other',
+  'pr.ex':'Exercises', 'pr.cal':'Consistency', 'pr.view':'View', 'pr.emptyT':'No workouts yet', 'pr.emptyS':'Your progress will show up here after your first completed workout.',
+  'btn.choose':'Choose a program', 'pr.metric':'Displayed measure', 'pr.history':'History', 'pr.exercise':'Exercise',
+  'm.e1rm':'1RM', 'm.max':'Weight', 'm.vol':'Volume', 'm.reps':'Reps', 'm.rel':'Relative',
+  'mc.e1rm':'Estimated 1RM from your best set in each workout (Epley formula).', 'mc.max':'Heaviest weight lifted in each workout.',
+  'mc.vol':'Weight × reps across all sets.', 'mc.reps':'Most reps in a single set.',
+  'mc.rel':'Estimated 1RM as a percentage of your bodyweight that day. If it holds steady while your weight drops, you are keeping your strength.',
+  'pr.bwPart':' Here, the load includes about 65% of your bodyweight.', 'pr.bwFull':' Here, the load includes your bodyweight.',
+  'pr.bwNone':' Here, the load is the added weight only. Add a weigh-in in the Weight tab to see the real load.',
+  'pr.relNone':'Add a weigh-in in the Weight tab to see your relative strength.', 'pr.noData':'No data for this measure.',
+  'st.best':'Best', 'st.last':'Latest', 'st.change':'Change', 'pr.delSess':'Delete workout', 'fb.session':'Workout', 'fb.exercise':'Exercise',
+  'w.weight':'Weight', 'w.date':'Date', 'a.decW':'Decrease weight', 'a.incW':'Increase weight', 'a.kg':'Weight in kg', 'a.dateW':'Weigh-in date',
+  'w.update':'Update this weigh-in', 'w.save':'Save weigh-in', 'w.note':'Your weight is also used to calculate your relative strength and the real load on pull-ups and dips.',
+  'w.progress':'Progress', 'w.period':'Period', 'r.30':'30 days', 'r.90':'3 months', 'r.all':'All', 'w.current':'Current', 'w.since':'Since start',
+  'w.list':'Weigh-ins', 'w.tapHint':'Tap a weigh-in to edit it.', 'a.delW':'Delete weigh-in', 'w.none':'No weigh-ins in this period.', 'w.chart':'Bodyweight',
+  'cal.week':'This week', 'cal.month':'This month', 'cal.streak':'In a row', 'a.prevM':'Previous month', 'a.nextM':'Next month', 'cal.rest':'Rest day',
+  'st.lang':'Language', 'st.session':'Workout', 'sw.wake':'Keep screen on', 'sw.wakeS':'During a workout', 'sw.vib':'Vibrations', 'sw.vibS':'Animations and end of rest',
+  'sw.sound':'Sound when rest ends', 'sw.soundS':'Two beeps when it’s time to go again', 'st.anim':'Animations', 'st.between':'Between exercises', 'st.end':'End of workout', 'btn.preview':'Preview',
+  'i.ring':'Ring', 'i.ringD':'A ring fills up after each exercise, with a message and the next exercise.',
+  'i.chalk':'Chalk', 'i.chalkD':'A cloud of chalk bursts behind a motivating message.',
+  'i.slam':'Type', 'i.slamD':'The words slam onto the screen, “That’s two.”, with a shake on each impact.',
+  'i.none':'None', 'i.noneD':'Go straight to the next exercise.',
+  'f.confetti':'Confetti', 'f.confettiD':'Two confetti cannons, then your workout summary appears.',
+  'f.medal':'Medal', 'f.medalD':'A medal drops, swings and shines above your summary.',
+  'f.fireworks':'Fireworks', 'f.fireworksD':'Fireworks around the total weight lifted during the workout.', 'f.noneD':'Go straight back to your progress.',
+  'bk.title':'Backup', 'bk.note':'Your workouts, weigh-ins and programs are stored on this phone. Export a backup from time to time so you never lose anything.',
+  'bk.export':'Export', 'bk.import':'Import', 'bk.file':'logbook-backup',
+  'fx.next':'Next', 'fx.ringOf':'of {n} exercises', 'fx.record':'New record on {ex}!', 'fin.title':'Workout complete', 'fin.lifted':'lifted today',
+  'fin.rec':(n, list) => `${n > 1 ? 'New records' : 'New record'}: ${list}`, 'fin.btn':'See my progress',
+  't.storage':'Storage full or unavailable', 't.badLoad':'Enter a valid weight', 't.badReps':'Enter a number of reps',
+  't.emptySession':'Empty workout, nothing was saved', 't.sessionSaved':'Workout saved', 't.progName':'Give the program a name',
+  't.progEmpty':'Add at least one exercise', 't.progCreated':'Program created', 't.progSaved':'Program saved', 't.exAdded':'{ex} added',
+  't.exName':'Give the exercise a name', 't.badWeight':'Enter a valid weight', 't.badDate':'Choose a valid date', 't.futureDate':'The date can’t be in the future',
+  't.wUpdated':'Weigh-in updated', 't.wSaved':'Weigh-in saved', 't.backup':'Backup downloaded', 't.badFile':'This file isn’t a valid backup',
+  't.nothing':'Nothing new in this file', 't.progsImported':P('{n} program imported', '{n} programs imported'), 't.sessImported':P('{n} workout imported', '{n} workouts imported'),
+  't.abandoned':'Workout discarded', 't.restored':'Original programs restored', 't.progDeleted':'Program deleted', 't.wDeleted':'Weigh-in deleted',
+  't.sessDeleted':'Workout deleted', 't.readFail':'Couldn’t read the file',
+  'ph':['Exercise done.', 'Clean. Keep it rolling.', 'One more in the bag.', 'Well held.', 'Solid.', 'That’s how you get stronger.', 'Keep this pace.', 'Job done.', 'Nothing stops you.', 'Now that’s serious work.'],
+  'fin.subs':['Great work.', 'Mission accomplished.', 'Be proud of yourself.', 'Another one done.', 'Nothing to add.'],
+  'slam':n => ['That’s', (['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen'][n] || n) + '.'],
+  'slam.rec':['New', 'record!'],
+},
+it:{
+  'nav.programs':'Programmi', 'nav.progress':'Progressi', 'nav.weight':'Peso', 'nav.settings':'Impostazioni', 'nav.sections':'Sezioni',
+  'res.title':'Allenamento in corso', 'btn.resume':'Riprendi', 'btn.confirm':'Conferma', 'btn.abandon':'Abbandona',
+  'tag.next':'Prossimo', 'prog.rest':'{r} di recupero tra le serie.', 'prog.busy':'Termina o abbandona l’allenamento in corso per iniziarne un altro.',
+  'btn.start':'Inizia', 'btn.edit':'Modifica', 'btn.delete':'Elimina', 'prog.none':'Nessun programma',
+  'prog.noneHint':'Crea il tuo primo programma o ripristina quelli originali.', 'btn.newProg':'Crea un programma', 'btn.restore':'Ripristina i programmi originali',
+  'last.never':'Mai fatto', 'last.today':'Fatto oggi', 'last.yesterday':'Fatto ieri', 'last.days':'Fatto {n} giorni fa',
+  'n.sets':P('{n} serie', '{n} serie'), 'n.sessions':P('{n} allenamento', '{n} allenamenti'), 'n.weighins':P('{n} pesata', '{n} pesate'),
+  'u.sessions':P('allenamento', 'allenamenti'), 'u.days':P('giorno', 'giorni'),
+  'timer.idleT':'Recupero previsto', 'timer.idleS':'dopo ogni serie', 'timer.doneT':'Si riparte', 'timer.doneS':'recupero finito', 'timer.runT':'Recupero', 'timer.of':'su {t}',
+  's.target':'Obiettivo {s} × {r}', 's.last':'Ultima volta, ', 's.first':'Prima volta con questo esercizio', 'bw.abbr':'PC',
+  'unit.lest':'kg zavorra', 'unit.reps':'rip.', 'unit.perDb':'kg per manubrio', 'unit.sets':'serie', 'unit.minutes':'minuti', 'unit.tonnes':'tonnellate',
+  'a.dec':'Diminuisci {w}', 'a.inc':'Aumenta {w}', 'w.load':'il carico', 'w.reps':'le ripetizioni',
+  's.validate':'Registra serie {n}', 's.noSets':'Nessuna serie per ora', 's.setAria':'Serie {k}, {v}, tocca per rimuovere', 's.remove':'Rimuovere?',
+  'btn.finish':'Termina', 'a.back':'Torna ai programmi', 'a.prevEx':'Esercizio precedente', 'a.nextEx':'Esercizio successivo',
+  'ed.new':'Nuovo programma', 'ed.edit':'Modifica programma', 'btn.save':'Salva', 'ed.name':'Nome del programma', 'ed.namePh':'Es. Petto e dorso',
+  'ed.rest':'Recupero tra le serie', 'a.lessRest':'Meno recupero', 'a.moreRest':'Più recupero', 'ed.exercises':'Esercizi',
+  'a.up':'Sposta su', 'a.down':'Sposta giù', 'a.removeEx':'Rimuovi {n}', 'a.less':'Meno {l}', 'a.more':'Più {l}',
+  'ed.noEx':'Nessun esercizio per ora.', 'btn.addEx':'Aggiungi un esercizio', 'ed.delete':'Elimina programma', 'btn.confirmDel':'Conferma eliminazione', 'a.cancel':'Annulla e torna indietro',
+  'pk.search':'Cerca', 'pk.searchAria':'Cerca un esercizio', 'btn.newEx':'Crea un esercizio', 'pk.added':'già aggiunto',
+  'pk.none':'Nessun esercizio corrisponde. Puoi crearlo.', 'a.backProg':'Torna al programma',
+  'nx.title':'Nuovo esercizio', 'btn.create':'Crea', 'nx.name':'Nome', 'nx.namePh':'Es. Panca alla Smith', 'nx.group':'Gruppo muscolare', 'nx.type':'Tipo',
+  'nx.load':'Con carico', 'nx.bw':'Corpo libero', 'nx.step':'Incremento di carico',
+  'nx.bwNote':'Per gli esercizi a corpo libero, il carico inserito è la zavorra (0 senza).', 'nx.stepNote':'L’incremento serve ai pulsanti + e − durante l’allenamento.', 'a.backList':'Torna all’elenco',
+  'g.Pectoraux':'Petto', 'g.Dos':'Dorso', 'g.Épaules':'Spalle', 'g.Bras':'Braccia', 'g.Jambes':'Gambe', 'g.Abdos':'Addominali', 'g.Autre':'Altro',
+  'pr.ex':'Esercizi', 'pr.cal':'Costanza', 'pr.view':'Vista', 'pr.emptyT':'Ancora nessun allenamento', 'pr.emptyS':'I tuoi progressi appariranno qui dopo il primo allenamento completato.',
+  'btn.choose':'Scegli un programma', 'pr.metric':'Misura visualizzata', 'pr.history':'Cronologia', 'pr.exercise':'Esercizio',
+  'm.e1rm':'1RM', 'm.max':'Carico', 'm.vol':'Volume', 'm.reps':'Rip.', 'm.rel':'Relativo',
+  'mc.e1rm':'1RM stimato dalla tua serie migliore di ogni allenamento (formula di Epley).', 'mc.max':'Carico più pesante sollevato in ogni allenamento.',
+  'mc.vol':'Carico × ripetizioni su tutte le serie.', 'mc.reps':'Massimo numero di ripetizioni in una serie.',
+  'mc.rel':'1RM stimato in percentuale del tuo peso corporeo del giorno. Se resta stabile mentre il peso scende, mantieni la tua forza.',
+  'pr.bwPart':' Qui il carico include circa il 65 % del tuo peso corporeo.', 'pr.bwFull':' Qui il carico include il tuo peso corporeo.',
+  'pr.bwNone':' Qui il carico corrisponde alla zavorra. Aggiungi una pesata nella scheda Peso per vedere il carico reale.',
+  'pr.relNone':'Aggiungi una pesata nella scheda Peso per vedere la tua forza relativa.', 'pr.noData':'Nessun dato per questa misura.',
+  'st.best':'Record', 'st.last':'Ultima', 'st.change':'Variazione', 'pr.delSess':'Elimina allenamento', 'fb.session':'Allenamento', 'fb.exercise':'Esercizio',
+  'w.weight':'Peso', 'w.date':'Data', 'a.decW':'Diminuisci il peso', 'a.incW':'Aumenta il peso', 'a.kg':'Peso in kg', 'a.dateW':'Data della pesata',
+  'w.update':'Aggiorna questa pesata', 'w.save':'Salva la pesata', 'w.note':'Il tuo peso serve anche a calcolare la forza relativa e il carico reale di trazioni e dip.',
+  'w.progress':'Andamento', 'w.period':'Periodo', 'r.30':'30 giorni', 'r.90':'3 mesi', 'r.all':'Tutto', 'w.current':'Attuale', 'w.since':'Dall’inizio',
+  'w.list':'Pesate', 'w.tapHint':'Tocca una pesata per correggerla.', 'a.delW':'Elimina la pesata', 'w.none':'Nessuna pesata in questo periodo.', 'w.chart':'Peso corporeo',
+  'cal.week':'Questa settimana', 'cal.month':'Questo mese', 'cal.streak':'Di fila', 'a.prevM':'Mese precedente', 'a.nextM':'Mese successivo', 'cal.rest':'Riposo',
+  'st.lang':'Lingua', 'st.session':'Allenamento', 'sw.wake':'Schermo sempre acceso', 'sw.wakeS':'Durante un allenamento', 'sw.vib':'Vibrazione', 'sw.vibS':'Animazioni e fine del recupero',
+  'sw.sound':'Suono a fine recupero', 'sw.soundS':'Due bip quando è ora di ripartire', 'st.anim':'Animazioni', 'st.between':'Tra gli esercizi', 'st.end':'Fine allenamento', 'btn.preview':'Anteprima',
+  'i.ring':'Anello', 'i.ringD':'Un anello si riempie a ogni esercizio completato, con un messaggio e l’esercizio successivo.',
+  'i.chalk':'Magnesite', 'i.chalkD':'Una nuvola di magnesite esplode dietro un messaggio motivante.',
+  'i.slam':'Tipo', 'i.slamD':'Le parole si schiantano sullo schermo, «E sono due.», con una scossa a ogni impatto.',
+  'i.none':'Nessuna', 'i.noneD':'Passaggio diretto all’esercizio successivo.',
+  'f.confetti':'Coriandoli', 'f.confettiD':'Due cannoni di coriandoli, poi appare il riepilogo dell’allenamento.',
+  'f.medal':'Medaglia', 'f.medalD':'Una medaglia cade, oscilla e brilla sopra il tuo riepilogo.',
+  'f.fireworks':'Fuochi', 'f.fireworksD':'Fuochi d’artificio intorno al peso totale sollevato durante l’allenamento.', 'f.noneD':'Ritorno diretto ai tuoi progressi.',
+  'bk.title':'Backup', 'bk.note':'Allenamenti, pesate e programmi sono salvati su questo telefono. Esporta un backup ogni tanto per non perdere nulla.',
+  'bk.export':'Esporta', 'bk.import':'Importa', 'bk.file':'diario-backup',
+  'fx.next':'Prossimo', 'fx.ringOf':'su {n} esercizi', 'fx.record':'Nuovo record su {ex}!', 'fin.title':'Allenamento completato', 'fin.lifted':'sollevate oggi',
+  'fin.rec':(n, list) => `${n > 1 ? 'Nuovi record' : 'Nuovo record'}: ${list}`, 'fin.btn':'Vedi i miei progressi',
+  't.storage':'Memoria piena o non disponibile', 't.badLoad':'Inserisci un carico valido', 't.badReps':'Inserisci un numero di ripetizioni',
+  't.emptySession':'Allenamento vuoto, niente salvato', 't.sessionSaved':'Allenamento salvato', 't.progName':'Dai un nome al programma',
+  't.progEmpty':'Aggiungi almeno un esercizio', 't.progCreated':'Programma creato', 't.progSaved':'Programma salvato', 't.exAdded':'{ex} aggiunto',
+  't.exName':'Dai un nome all’esercizio', 't.badWeight':'Inserisci un peso valido', 't.badDate':'Scegli una data valida', 't.futureDate':'La data non può essere nel futuro',
+  't.wUpdated':'Pesata aggiornata', 't.wSaved':'Pesata salvata', 't.backup':'Backup scaricato', 't.badFile':'Questo file non è un backup valido',
+  't.nothing':'Niente di nuovo in questo file', 't.progsImported':P('{n} programma importato', '{n} programmi importati'), 't.sessImported':P('{n} allenamento importato', '{n} allenamenti importati'),
+  't.abandoned':'Allenamento abbandonato', 't.restored':'Programmi originali ripristinati', 't.progDeleted':'Programma eliminato', 't.wDeleted':'Pesata eliminata',
+  't.sessDeleted':'Allenamento eliminato', 't.readFail':'Impossibile leggere il file',
+  'ph':['Esercizio fatto.', 'Pulito. Avanti così.', 'Un altro in tasca.', 'Ben tenuto.', 'Solido.', 'È così che si progredisce.', 'Mantieni questo ritmo.', 'Lavoro fatto.', 'Niente ti ferma.', 'Questo sì che è lavoro serio.'],
+  'fin.subs':['Ottimo lavoro.', 'Missione compiuta.', 'Puoi essere fiero di te.', 'Un altro fatto.', 'Niente da dire.'],
+  'slam':n => n === 1 ? ['E', 'uno.'] : ['E', 'sono', (['zero','uno','due','tre','quattro','cinque','sei','sette','otto','nove','dieci','undici','dodici','tredici','quattordici','quindici'][n] || n) + '.'],
+  'slam.rec':['Nuovo', 'record!'],
+},
+};
+/* Noms des exercices du catalogue */
+const EXN = {
+  dc:['Bench press','Bankdrücken','Panca piana'], dib:['Incline barbell press','Schrägbankdrücken mit Langhantel','Panca inclinata con bilanciere'],
+  dch:['Dumbbell bench press','Kurzhantel-Bankdrücken','Panca piana con manubri'], dih:['Incline dumbbell press','Schrägbankdrücken mit Kurzhanteln','Panca inclinata con manubri'],
+  dd:['Decline bench press','Negativbankdrücken','Panca declinata'], ecp:['Cable crossover','Kabelzug-Crossover','Croci ai cavi'],
+  ech:['Dumbbell flyes','Kurzhantel-Fliegende','Croci con manubri'], pec:['Pec deck','Butterfly-Maschine','Pectoral machine'],
+  pompes:['Push-ups','Liegestütze','Piegamenti'], dips:['Dips','Dips','Dip'],
+  trac:['Pull-ups','Klimmzüge','Trazioni'], tsup:['Chin-ups','Klimmzüge im Untergriff','Trazioni supine'],
+  tv:['Wide-grip lat pulldown','Latzug breit','Lat machine presa larga'], tvs:['Close-grip lat pulldown','Latzug eng','Lat machine presa stretta'],
+  rb:['Barbell row','Langhantelrudern','Rematore con bilanciere'], rh:['One-arm dumbbell row','Einarmiges Kurzhantelrudern','Rematore con manubrio'],
+  rpb:['Seated cable row','Rudern am Kabelzug sitzend','Pulley basso'], rt:['T-bar row','T-Bar-Rudern','Rematore T-bar'],
+  pop:['Cable pullover','Pullover am Kabelzug','Pullover ai cavi'], sdt:['Deadlift','Kreuzheben','Stacco da terra'], shrug:['Shrugs','Shrugs','Scrollate'],
+  dm:['Standing overhead press','Schulterdrücken stehend','Lento avanti in piedi'], dha:['Seated dumbbell press','Kurzhantel-Schulterdrücken sitzend','Shoulder press con manubri'],
+  el:['Lateral raises','Seitheben','Alzate laterali'], elp:['Cable lateral raises','Seitheben am Kabelzug','Alzate laterali ai cavi'],
+  ois:['Rear delt flyes','Reverse Flys','Alzate posteriori'], fp:['Face pull','Face Pull','Face pull'], rmen:['Upright row','Aufrechtes Rudern','Tirate al mento'],
+  curl:['EZ-bar curl','SZ-Curls','Curl con bilanciere EZ'], curlh:['Dumbbell curl','Kurzhantel-Curls','Curl con manubri'],
+  ci:['Incline dumbbell curl','Schrägbank-Curls','Curl su panca inclinata'], cm:['Hammer curl','Hammer-Curls','Curl a martello'],
+  cp:['Preacher curl','Scott-Curls','Curl alla panca Scott'], ext:['Cable triceps pushdown','Trizepsdrücken am Kabelzug','Push down ai cavi'],
+  baf:['Skull crushers','French Press','French press'], enh:['Overhead dumbbell extension','Trizepsdrücken über Kopf','Estensioni sopra la testa'],
+  dcps:['Close-grip bench press','Enges Bankdrücken','Panca presa stretta'], sq:['Squat','Kniebeuge','Squat'], gob:['Goblet squat','Goblet Squat','Goblet squat'],
+  presse:['Leg press','Beinpresse','Leg press'], fb:['Bulgarian split squat','Bulgarische Kniebeuge','Affondi bulgari'],
+  sdtr:['Romanian deadlift','Rumänisches Kreuzheben','Stacco rumeno'], lc:['Leg curl','Beinbeuger','Leg curl'], lext:['Leg extension','Beinstrecker','Leg extension'],
+  ht:['Hip thrust','Hip Thrust','Hip thrust'], mol:['Standing calf raise','Wadenheben stehend','Calf raise in piedi'],
+  rjs:['Hanging leg raises','Beinheben hängend','Sollevamento gambe alla sbarra'], crp:['Cable crunch','Kabelzug-Crunch','Crunch ai cavi'], roue:['Ab wheel rollout','Bauchroller','Ab wheel'],
+};
+/* Programmes fournis : traduits tant que leur nom d'origine n'a pas été modifié */
+const PROG_I18N = {
+  A:{fr:['Force','Charges lourdes, peu de répétitions.'], en:['Strength','Heavy loads, low reps.'], de:['Kraft','Schwere Gewichte, wenige Wiederholungen.'], it:['Forza','Carichi pesanti, poche ripetizioni.']},
+  B:{fr:['Volume','Hypertrophie, séries de 10 à 15 répétitions.'], en:['Volume','Hypertrophy, sets of 10 to 15 reps.'], de:['Volumen','Hypertrophie, Sätze mit 10 bis 15 Wiederholungen.'], it:['Volume','Ipertrofia, serie da 10 a 15 ripetizioni.']},
+  C:{fr:['Complet','Haut du corps et jambes légères.'], en:['Full body','Upper body and light legs.'], de:['Ganzkörper','Oberkörper und leichte Beine.'], it:['Completo','Parte superiore e gambe leggere.']},
+  w4h1:{fr:['Haut lourd','Jour 1. Gros mouvements du haut du corps, charges lourdes.'], en:['Heavy upper','Day 1. Big upper-body lifts, heavy loads.'], de:['Oberkörper schwer','Tag 1. Große Oberkörperübungen, schwere Gewichte.'], it:['Parte alta pesante','Giorno 1. Grandi esercizi per la parte superiore, carichi pesanti.']},
+  w4j2:{fr:['Jambes et gainage','Jour 2. Force des jambes, chaîne postérieure et gainage.'], en:['Legs and core','Day 2. Leg strength, posterior chain and core.'], de:['Beine und Rumpf','Tag 2. Beinkraft, hintere Kette und Rumpf.'], it:['Gambe e core','Giorno 2. Forza delle gambe, catena posteriore e core.']},
+  w4p3:{fr:['Pecs et dos volume','Jour 3. Volume pour les pectoraux et le dos, repos courts.'], en:['Chest and back volume','Day 3. Volume for chest and back, short rests.'], de:['Brust und Rücken Volumen','Tag 3. Volumen für Brust und Rücken, kurze Pausen.'], it:['Petto e dorso volume','Giorno 3. Volume per petto e dorso, recuperi brevi.']},
+  w4e4:{fr:['Épaules et bras','Jour 4. Épaules complètes, haut du dos et bras.'], en:['Shoulders and arms','Day 4. Full shoulders, upper back and arms.'], de:['Schultern und Arme','Tag 4. Komplette Schultern, oberer Rücken und Arme.'], it:['Spalle e braccia','Giorno 4. Spalle complete, parte alta della schiena e braccia.']},
+};
+const HINTS = {'lestées':{en:'weighted', de:'mit Zusatzgewicht', it:'zavorrate'}, 'lestés':{en:'weighted', de:'mit Zusatzgewicht', it:'zavorrati'}};
+
+let LANG = 'fr';
+const loc = () => LOCALES[LANG];
+function t(k, p){
+  const v = (I18N[LANG] && I18N[LANG][k] !== undefined) ? I18N[LANG][k] : I18N.fr[k];
+  if (typeof v === 'function') return v(p);
+  if (typeof v !== 'string') return v;
+  return p && typeof p === 'object' ? v.replace(/\{(\w+)\}/g, (m, x) => p[x] !== undefined ? p[x] : m) : v;
+}
+const progName = p => { const m = p && PROG_I18N[p.id]; return m && p.name === m.fr[0] ? (m[LANG] || m.fr)[0] : (p ? p.name : ''); };
+const progDesc = p => { const m = p && PROG_I18N[p.id]; return m && p.desc === m.fr[1] ? (m[LANG] || m.fr)[1] : (p ? p.desc : ''); };
+const snapName = (pid, name) => { const m = PROG_I18N[pid]; return m && name === m.fr[0] ? (m[LANG] || m.fr)[0] : name; };
+const hintTr = hnt => (HINTS[hnt] && HINTS[hnt][LANG]) || hnt;
+const grpTr = g => t('g.' + g);
+
 
 /* ---------- Catalogue d'exercices ---------- */
 const GROUPS = ['Pectoraux', 'Dos', 'Épaules', 'Bras', 'Jambes', 'Abdos', 'Autre'];
@@ -531,7 +867,7 @@ const restOf = p => (p && p.rest) || (p && OLD_REST[p.id]) || 90;
 const K = {sessions:'carnet.v1.sessions', draft:'carnet.v1.draft', programs:'carnet.v1.programs', customEx:'carnet.v1.customEx', prefs:'carnet.v1.prefs', weights:'carnet.v1.weights'};
 const LS = {
   get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
-  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ toast('Stockage plein ou indisponible'); } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ toast(t('t.storage')); } },
   del(k){ try { localStorage.removeItem(k); } catch(e){} },
 };
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -545,7 +881,7 @@ const state = {
   programs:null, customEx:{}, sessions:[],
   progEx:null, metric:'e1rm', openSession:null, confirm:null, flash:null,
   edit:null, pickQuery:'', newEx:null, scrollEnd:false,
-  prefs:Object.assign({inter:'ring', final:'confetti', wake:true, vibrate:true, sound:false}, LS.get(K.prefs, {}) || {}),
+  prefs:Object.assign({inter:'ring', final:'confetti', wake:true, vibrate:true, sound:false, lang:detectLang()}, LS.get(K.prefs, {}) || {}),
   weights:[], progTab:'ex', calMonth:null, calDay:null, slide:null, bwDate:null, bwInput:null, bwRange:'all',
 };
 {
@@ -577,13 +913,15 @@ function loadDraft(){
   return d;
 }
 state.draft = loadDraft();
+LANG = LOCALES[state.prefs.lang] ? state.prefs.lang : 'fr';
+document.documentElement.lang = LANG;
 
 /* ---------- Utilitaires ---------- */
 const h = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 const round2 = n => Math.round(n * 100) / 100;
 const parseNum = v => parseFloat(String(v).replace(',', '.').replace(/[^\d.\-]/g, ''));
-const fmt = n => Number(n).toLocaleString('fr-FR', {maximumFractionDigits:2});
+const fmt = n => Number(n).toLocaleString(loc(), {maximumFractionDigits:2});
 const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const e1rm = (w, r) => r <= 0 ? 0 : (r === 1 ? w : w * (1 + r / 30));
 const sorted = () => state.sessions.slice().sort((a, b) => a.date.localeCompare(b.date));
@@ -617,12 +955,13 @@ const setsOf = (s, exId) => s.items.filter(it => it.ex === exId).flatMap(it => i
 const volumeOf = (exId, sets, iso) => effSets(exId, sets, iso).reduce((a, x) => a + x.w * x.r, 0);
 
 function exName(id){
+  if (EX[id] && LANG !== 'fr' && EXN[id]) return EXN[id][{en:0, de:1, it:2}[LANG]];
   const e = exInfo(id); if (e) return e.name;
   for (const s of state.sessions) for (const it of s.items) if (it.ex === id && it.name) return it.name;
-  return 'Exercice';
+  return t('fb.exercise');
 }
 function fmtSet(s, bw){
-  if (bw) return s.w > 0 ? `+${fmt(s.w)}×${s.r}` : `${s.r} reps`;
+  if (bw) return s.w > 0 ? `+${fmt(s.w)}×${s.r}` : `${s.r} ${t('unit.reps')}`;
   return `${fmt(s.w)}×${s.r}`;
 }
 function lastLine(sets, bw){
@@ -631,7 +970,7 @@ function lastLine(sets, bw){
     const g = groups[groups.length - 1];
     if (g && g.w === s.w) g.r.push(s.r); else groups.push({w:s.w, r:[s.r]});
   }
-  return groups.map(g => (bw && g.w === 0 ? 'PDC' : (bw ? '+' : '') + fmt(g.w) + ' kg') + ' : ' + g.r.join(', ')).join(' / ');
+  return groups.map(g => (bw && g.w === 0 ? t('bw.abbr') : (bw ? '+' : '') + fmt(g.w) + ' kg') + (LANG === 'fr' ? ' : ' : ': ') + g.r.join(', ')).join(' / ');
 }
 function lastPerf(exId, excludeId){
   const list = sorted();
@@ -654,12 +993,12 @@ function lastDoneTime(pid){
   return t;
 }
 function lastDoneLabel(pid){
-  const t = lastDoneTime(pid);
-  if (t === -Infinity) return 'Jamais faite';
-  const d = daysAgo(t);
-  if (d <= 0) return 'Faite aujourd’hui';
-  if (d === 1) return 'Faite hier';
-  return `Faite il y a ${d} jours`;
+  const tm = lastDoneTime(pid);
+  if (tm === -Infinity) return t('last.never');
+  const d = daysAgo(tm);
+  if (d <= 0) return t('last.today');
+  if (d === 1) return t('last.yesterday');
+  return t('last.days', {n:d});
 }
 function suggestNext(){
   let best = null, bt = Infinity;
@@ -679,8 +1018,8 @@ function restInfo(d){
   return {sec, target, done, p:Math.min(1, sec / target),
     txt:done ? `Repos fini, ${mmss(sec)}` : `Repos ${mmss(sec)} / ${mmss(target)}`};
 }
-const dateShort = iso => new Date(iso).toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
-const dateTiny = iso => new Date(iso).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+const dateShort = iso => new Date(iso).toLocaleDateString(loc(), {day:'numeric', month:'short'});
+const dateTiny = iso => new Date(iso).toLocaleDateString(loc(), {day:'2-digit', month:'2-digit'});
 const volFmt = v => v >= 1000 ? `${fmt(Math.round(v / 100) / 10)} t` : `${fmt(Math.round(v))} kg`;
 
 /* ---------- Toast, confirmations, navigation ---------- */
@@ -728,44 +1067,44 @@ function viewPrograms(){
   let out = '<div class="page">';
   if (d){
     const n = d.items.reduce((a, it) => a + it.sets.length, 0);
-    out += `<section class="resume" aria-label="Séance en cours">
-      <div><p class="resume-k">Séance en cours</p>
-      <p class="resume-t">${h(d.plan.name)}<span>${n} série${n > 1 ? 's' : ''}, ${elapsed(d.startedAt)}</span></p></div>
+    out += `<section class="resume" aria-label="${h(t('res.title'))}">
+      <div><p class="resume-k">${t('res.title')}</p>
+      <p class="resume-t">${h(snapName(d.program, d.plan.name))}<span>${t('n.sets', n)}, ${elapsed(d.startedAt)}</span></p></div>
       <div class="resume-actions">
-        <button class="btn primary" data-action="resume">Reprendre</button>
-        <button class="btn ghost ${state.confirm === 'abandon' ? 'danger' : ''}" data-action="abandon">${state.confirm === 'abandon' ? 'Confirmer' : 'Abandonner'}</button>
+        <button class="btn primary" data-action="resume">${t('btn.resume')}</button>
+        <button class="btn ghost ${state.confirm === 'abandon' ? 'danger' : ''}" data-action="abandon">${state.confirm === 'abandon' ? t('btn.confirm') : t('btn.abandon')}</button>
       </div></section>`;
   }
   const next = d ? null : suggestNext();
   if (state.programs.length){
     out += '<ul class="plist">';
     for (const p of state.programs){
-      const open = state.openProgram === p.id;
+      const open = state.openProgram === p.id, name = progName(p), desc = progDesc(p);
       out += `<li class="prog ${open ? 'open' : ''} ${next === p.id ? 'next' : ''}">
         <button class="prog-head" data-action="toggle-prog" data-id="${h(p.id)}" aria-expanded="${open}">
-          <span class="prog-letter" aria-hidden="true">${h(letter(p.name))}</span>
-          <span class="prog-main"><span class="prog-name">${h(p.name)}</span><span class="prog-sub">${lastDoneLabel(p.id)}</span></span>
-          ${next === p.id ? '<span class="tag">Prochaine</span>' : '<span></span>'}
+          <span class="prog-letter" aria-hidden="true">${h(letter(name))}</span>
+          <span class="prog-main"><span class="prog-name">${h(name)}</span><span class="prog-sub">${lastDoneLabel(p.id)}</span></span>
+          ${next === p.id ? `<span class="tag">${t('tag.next')}</span>` : '<span></span>'}
         </button>`;
       if (open){
-        out += '<div class="prog-body">' + `<p class="note">${p.desc ? h(p.desc) + ' ' : ''}Repos de ${fmtRest(restOf(p))} entre les séries.</p>` + '<ol class="exlist">' +
-          p.items.map(it => `<li><span>${h(exName(it.ex))}${it.hint ? ` <em>${h(it.hint)}</em>` : ''}</span><span class="tgt">${it.sets} × ${h(it.label || it.reps)}</span></li>`).join('') +
+        out += '<div class="prog-body">' + `<p class="note">${desc ? h(desc) + ' ' : ''}${t('prog.rest', {r:fmtRest(restOf(p))})}</p>` + '<ol class="exlist">' +
+          p.items.map(it => `<li><span>${h(exName(it.ex))}${it.hint ? ` <em>${h(hintTr(it.hint))}</em>` : ''}</span><span class="tgt">${it.sets} × ${h(it.label || it.reps)}</span></li>`).join('') +
           '</ol>' +
-          (d ? '<p class="note">Termine ou abandonne la séance en cours pour en commencer une autre.</p>' : '') +
-          `<div class="prog-actions">${d ? '' : `<button class="btn primary" data-action="start" data-id="${h(p.id)}">Commencer</button>`}
-            <button class="btn ghost" data-action="edit-prog" data-id="${h(p.id)}">Modifier</button>
-            <button class="btn ghost danger" data-action="del-prog" data-id="${h(p.id)}">${state.confirm === 'delp' + p.id ? 'Confirmer' : 'Supprimer'}</button></div>` +
+          (d ? `<p class="note">${t('prog.busy')}</p>` : '') +
+          `<div class="prog-actions">${d ? '' : `<button class="btn primary" data-action="start" data-id="${h(p.id)}">${t('btn.start')}</button>`}
+            <button class="btn ghost" data-action="edit-prog" data-id="${h(p.id)}">${t('btn.edit')}</button>
+            <button class="btn ghost danger" data-action="del-prog" data-id="${h(p.id)}">${state.confirm === 'delp' + p.id ? t('btn.confirm') : t('btn.delete')}</button></div>` +
           '</div>';
       }
       out += '</li>';
     }
     out += '</ul>';
   } else {
-    out += '<div class="empty"><p class="empty-t">Aucun programme</p><p>Crée ton premier programme ou réinstalle ceux d’origine.</p></div>';
+    out += `<div class="empty"><p class="empty-t">${t('prog.none')}</p><p>${t('prog.noneHint')}</p></div>`;
   }
-  out += '<button class="btn ghost wide" data-action="new-prog">Créer un programme</button>';
+  out += `<button class="btn ghost wide" data-action="new-prog">${t('btn.newProg')}</button>`;
   if (DEFAULT_PROGRAMS.some(dp => !prog(dp.id))){
-    out += '<button class="btn ghost wide" data-action="restore-defaults">Réinstaller les programmes d’origine</button>';
+    out += `<button class="btn ghost wide" data-action="restore-defaults">${t('btn.restore')}</button>`;
   }
   return out + '</div>';
 }
@@ -775,14 +1114,14 @@ function viewPrograms(){
 function timerState(d){
   const target = (d.plan && d.plan.rest) || 90;
   const ri = restInfo(d);
-  if (!ri) return {cls:'idle', v:mmss(target), l:'<b>Repos prévu</b>après chaque série', p:0};
-  if (ri.done) return {cls:'done', v:'+' + mmss(ri.sec - target), l:'<b>C’est reparti</b>repos terminé', p:1};
-  return {cls:'run', v:mmss(target - ri.sec), l:`<b>Repos</b>sur ${mmss(target)}`, p:ri.p};
+  if (!ri) return {cls:'idle', v:mmss(target), l:`<b>${t('timer.idleT')}</b>${t('timer.idleS')}`, p:0};
+  if (ri.done) return {cls:'done', v:'+' + mmss(ri.sec - target), l:`<b>${t('timer.doneT')}</b>${t('timer.doneS')}`, p:1};
+  return {cls:'run', v:mmss(target - ri.sec), l:`<b>${t('timer.runT')}</b>${t('timer.of', {t:mmss(target)})}`, p:ri.p};
 }
 function timerHtml(d){
-  const t = timerState(d);
-  return `<div class="timer ${t.cls}" id="timer" style="--p:${t.p.toFixed(3)}" role="timer" aria-live="off">
-    <span class="tm-v" id="tm-v">${t.v}</span><span class="tm-l" id="tm-l">${t.l}</span><span class="tm-bar"><i></i></span></div>`;
+  const ts = timerState(d);
+  return `<div class="timer ${ts.cls}" id="timer" style="--p:${ts.p.toFixed(3)}" role="timer" aria-live="off">
+    <span class="tm-v" id="tm-v">${ts.v}</span><span class="tm-l" id="tm-l">${ts.l}</span><span class="tm-bar"><i></i></span></div>`;
 }
 
 /* Progression suggérée : toutes les reps cibles réussies la dernière fois → un palier de plus */
@@ -805,46 +1144,46 @@ function inputsFor(i){
 }
 function stepper(f, val, label, step, what){
   return `<div class="stp">
-    <button class="stp-b rep" data-action="dec" data-f="${f}" data-step="${step}" aria-label="Diminuer ${what}">−</button>
+    <button class="stp-b rep" data-action="dec" data-f="${f}" data-step="${step}" aria-label="${h(t('a.dec', {w:what}))}">−</button>
     <label class="stp-v"><input id="in-${f}" data-f="${f}" inputmode="${f === 'w' ? 'decimal' : 'numeric'}" enterkeyhint="done" autocomplete="off" value="${fmt(val)}" aria-label="${h(label)}"><span>${h(label)}</span></label>
-    <button class="stp-b rep" data-action="inc" data-f="${f}" data-step="${step}" aria-label="Augmenter ${what}">+</button>
+    <button class="stp-b rep" data-action="inc" data-f="${f}" data-step="${step}" aria-label="${h(t('a.inc', {w:what}))}">+</button>
   </div>`;
 }
 function viewSession(){
   const d = state.draft, items = d.plan.items, i = d.idx;
-  const it = items[i], ex = exInfo(it.ex) || {name:exName(it.ex), step:2.5, start:0}, cur = d.items[i];
+  const it = items[i], ex = exInfo(it.ex) || {step:2.5, start:0}, cur = d.items[i];
   const inp = inputsFor(i);
   const last = lastPerf(it.ex, d.id);
   const reached = cur.sets.length >= it.sets;
   const isLast = i === items.length - 1;
   const allDone = d.items.every((x, k) => x.sets.length >= items[k].sets);
-  const tgt = [`Objectif ${it.sets} × ${it.label || it.reps}`, it.hint, ex.unit].filter(Boolean).join(', ');
+  const tgt = [t('s.target', {s:it.sets, r:it.label || it.reps}), it.hint ? hintTr(it.hint) : '', ex.unit ? t('unit.perDb') : ''].filter(Boolean).join(', ');
   const sug = !cur.sets.length && inp.inc > 0 ? `<span class="sug">+${fmt(inp.inc)} kg</span>` : '';
   return `<div class="session ${state.slide ? 'slide-' + state.slide : ''}">
     <header class="bar">
-      <button class="icon" data-action="leave" aria-label="Retour aux programmes">‹</button>
-      <span class="bar-t">${h(d.plan.name)}<span class="bar-time" id="elapsed">${elapsed(d.startedAt)}</span></span>
-      <button class="btn small ${state.confirm === 'finish' || allDone ? 'primary' : ''}" data-action="finish">${state.confirm === 'finish' ? 'Confirmer' : 'Terminer'}</button>
+      <button class="icon" data-action="leave" aria-label="${h(t('a.back'))}">‹</button>
+      <span class="bar-t">${h(snapName(d.program, d.plan.name))}<span class="bar-time" id="elapsed">${elapsed(d.startedAt)}</span></span>
+      <button class="btn small ${state.confirm === 'finish' || allDone ? 'primary' : ''}" data-action="finish">${state.confirm === 'finish' ? t('btn.confirm') : t('btn.finish')}</button>
     </header>
     <div class="ex">
-      <h1 class="ex-name">${h(ex.name)}</h1>
+      <h1 class="ex-name">${h(exName(it.ex))}</h1>
       <p class="ex-tgt">${h(tgt)}</p>
-      <p class="ex-last">${sug}${last ? 'Dernière fois, ' + h(lastLine(last, ex.bw)) : 'Première fois sur cet exercice'}</p>
+      <p class="ex-last">${sug}${last ? t('s.last') + h(lastLine(last, ex.bw)) : t('s.first')}</p>
     </div>
     <div class="controls">
       ${timerHtml(d)}
       <div class="steppers">
-        ${stepper('w', inp.w, ex.bw ? 'kg de lest' : 'kg', ex.step, 'la charge')}
-        ${stepper('r', inp.r, 'reps', 1, 'les répétitions')}
+        ${stepper('w', inp.w, ex.bw ? t('unit.lest') : 'kg', ex.step, t('w.load'))}
+        ${stepper('r', inp.r, t('unit.reps'), 1, t('w.reps'))}
       </div>
-      <button class="btn primary validate" data-action="add-set">Valider la série ${cur.sets.length + 1}</button>
-      <div class="sets" aria-label="Séries validées">${cur.sets.length
-        ? cur.sets.map((s, k) => `<button class="chip ${state.confirm === 'rm' + k ? 'warn' : ''} ${state.flash === k ? 'flash' : ''}" data-action="rm-set" data-k="${k}" aria-label="Série ${k + 1}, ${h(fmtSet(s, ex.bw))}, toucher pour retirer">${state.confirm === 'rm' + k ? 'Retirer ?' : h(fmtSet(s, ex.bw))}</button>`).join('')
-        : '<span class="sets-empty">Aucune série pour l’instant</span>'}</div>
-      <nav class="exnav" aria-label="Exercices">
+      <button class="btn primary validate" data-action="add-set">${t('s.validate', {n:cur.sets.length + 1})}</button>
+      <div class="sets" aria-label="${h(t('unit.sets'))}">${cur.sets.length
+        ? cur.sets.map((s, k) => `<button class="chip ${state.confirm === 'rm' + k ? 'warn' : ''} ${state.flash === k ? 'flash' : ''}" data-action="rm-set" data-k="${k}" aria-label="${h(t('s.setAria', {k:k + 1, v:fmtSet(s, ex.bw)}))}">${state.confirm === 'rm' + k ? t('s.remove') : h(fmtSet(s, ex.bw))}</button>`).join('')
+        : `<span class="sets-empty">${t('s.noSets')}</span>`}</div>
+      <nav class="exnav" aria-label="${h(t('ed.exercises'))}">
         <span class="pos">${i + 1} / ${items.length}</span>
-        <button class="icon" data-action="prev" ${i === 0 ? 'disabled' : ''} aria-label="Exercice précédent">‹</button>
-        <button class="icon ${reached && !isLast ? 'go' : ''}" data-action="next" ${isLast ? 'disabled' : ''} aria-label="Exercice suivant">›</button>
+        <button class="icon" data-action="prev" ${i === 0 ? 'disabled' : ''} aria-label="${h(t('a.prevEx'))}">‹</button>
+        <button class="icon ${reached && !isLast ? 'go' : ''}" data-action="next" ${isLast ? 'disabled' : ''} aria-label="${h(t('a.nextEx'))}">›</button>
       </nav>
     </div>
   </div>`;
@@ -853,38 +1192,38 @@ function viewSession(){
 /* ---------- Vue : éditeur de programme ---------- */
 function mstp(f, k, val, label){
   return `<div class="mstp">
-    <button class="rep" data-action="ed-dec" data-f="${f}" data-k="${k}" aria-label="Moins de ${label}">−</button>
+    <button class="rep" data-action="ed-dec" data-f="${f}" data-k="${k}" aria-label="${h(t('a.less', {l:label}))}">−</button>
     <output>${val}<small>${label}</small></output>
-    <button class="rep" data-action="ed-inc" data-f="${f}" data-k="${k}" aria-label="Plus de ${label}">+</button>
+    <button class="rep" data-action="ed-inc" data-f="${f}" data-k="${k}" aria-label="${h(t('a.more', {l:label}))}">+</button>
   </div>`;
 }
 function viewEditor(){
   const e = state.edit, n = e.items.length;
   return `<div class="sub">
     <header class="bar">
-      <button class="icon" data-action="ed-cancel" aria-label="Annuler et revenir">‹</button>
-      <span class="bar-t">${e.isNew ? 'Nouveau programme' : 'Modifier le programme'}</span>
-      <button class="btn small primary" data-action="ed-save">Enregistrer</button>
+      <button class="icon" data-action="ed-cancel" aria-label="${h(t('a.cancel'))}">‹</button>
+      <span class="bar-t">${e.isNew ? t('ed.new') : t('ed.edit')}</span>
+      <button class="btn small primary" data-action="ed-save">${t('btn.save')}</button>
     </header>
     <div class="page">
-      <label class="field"><span class="flab">Nom du programme</span>
-        <input class="inp" id="ed-name" value="${h(e.name)}" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="Ex. Pecs et dos"></label>
-      <div class="field"><span class="flab">Repos entre les séries</span>
+      <label class="field"><span class="flab">${t('ed.name')}</span>
+        <input class="inp" id="ed-name" value="${h(e.name)}" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="${h(t('ed.namePh'))}"></label>
+      <div class="field"><span class="flab">${t('ed.rest')}</span>
         <div class="mstp rest-stp">
-          <button class="rep" data-action="ed-rest-dec" aria-label="Moins de repos">−</button>
+          <button class="rep" data-action="ed-rest-dec" aria-label="${h(t('a.lessRest'))}">−</button>
           <output id="ed-rest">${fmtRest(e.rest)}</output>
-          <button class="rep" data-action="ed-rest-inc" aria-label="Plus de repos">+</button>
+          <button class="rep" data-action="ed-rest-inc" aria-label="${h(t('a.moreRest'))}">+</button>
         </div></div>
-      <span class="flab">Exercices${n ? ` (${n})` : ''}</span>
+      <span class="flab">${t('ed.exercises')}${n ? ` (${n})` : ''}</span>
       ${n ? '<ol class="elist">' + e.items.map((it, k) => `<li class="erow">
         <div class="erow-top"><span class="erow-name">${h(exName(it.ex))}</span>
-          <button class="mini" data-action="ed-up" data-k="${k}" ${k === 0 ? 'disabled' : ''} aria-label="Monter">↑</button>
-          <button class="mini" data-action="ed-down" data-k="${k}" ${k === n - 1 ? 'disabled' : ''} aria-label="Descendre">↓</button>
-          <button class="mini" data-action="ed-rm" data-k="${k}" aria-label="Retirer ${h(exName(it.ex))}">×</button></div>
-        <div class="erow-stp">${mstp('sets', k, it.sets, 'séries')}${mstp('reps', k, it.reps, 'reps')}</div>
-      </li>`).join('') + '</ol>' : '<p class="note">Aucun exercice pour l’instant.</p>'}
-      <button class="btn wide" data-action="ed-add">Ajouter un exercice</button>
-      ${e.isNew ? '' : `<button class="btn ghost danger wide" data-action="ed-delete">${state.confirm === 'ed-delete' ? 'Confirmer la suppression' : 'Supprimer le programme'}</button>`}
+          <button class="mini" data-action="ed-up" data-k="${k}" ${k === 0 ? 'disabled' : ''} aria-label="${h(t('a.up'))}">↑</button>
+          <button class="mini" data-action="ed-down" data-k="${k}" ${k === n - 1 ? 'disabled' : ''} aria-label="${h(t('a.down'))}">↓</button>
+          <button class="mini" data-action="ed-rm" data-k="${k}" aria-label="${h(t('a.removeEx', {n:exName(it.ex)}))}">×</button></div>
+        <div class="erow-stp">${mstp('sets', k, it.sets, t('unit.sets'))}${mstp('reps', k, it.reps, t('unit.reps'))}</div>
+      </li>`).join('') + '</ol>' : `<p class="note">${t('ed.noEx')}</p>`}
+      <button class="btn wide" data-action="ed-add">${t('btn.addEx')}</button>
+      ${e.isNew ? '' : `<button class="btn ghost danger wide" data-action="ed-delete">${state.confirm === 'ed-delete' ? t('btn.confirmDel') : t('ed.delete')}</button>`}
     </div>
   </div>`;
 }
@@ -897,24 +1236,25 @@ function allExEntries(){
 function pickList(){
   const q = norm(state.pickQuery);
   const inProg = new Set((state.edit ? state.edit.items : []).map(i => i.ex));
-  const all = allExEntries();
+  const all = allExEntries().map(e => ({...e, label:exName(e.id)}));
   let out = '';
   for (const g of GROUPS){
-    const list = all.filter(e => (e.g || 'Autre') === g && (!q || norm(e.name).includes(q)));
+    const list = all.filter(e => (e.g || 'Autre') === g && (!q || norm(e.label).includes(q) || norm(e.name).includes(q)))
+      .sort((a, b) => a.label.localeCompare(b.label, loc()));
     if (!list.length) continue;
-    out += `<h3 class="pg">${g}</h3>` + list.map(e => `<button class="pick" data-action="pk-add" data-id="${h(e.id)}"><span>${h(e.name)}</span>${inProg.has(e.id) ? '<small>déjà ajouté</small>' : ''}</button>`).join('');
+    out += `<h3 class="pg">${grpTr(g)}</h3>` + list.map(e => `<button class="pick" data-action="pk-add" data-id="${h(e.id)}"><span>${h(e.label)}</span>${inProg.has(e.id) ? `<small>${t('pk.added')}</small>` : ''}</button>`).join('');
   }
-  return out || '<p class="note">Aucun exercice ne correspond. Tu peux le créer.</p>';
+  return out || `<p class="note">${t('pk.none')}</p>`;
 }
 function viewPicker(){
   return `<div class="sub">
     <header class="bar">
-      <button class="icon" data-action="pk-back" aria-label="Retour au programme">‹</button>
-      <span class="bar-t">Ajouter un exercice</span>
+      <button class="icon" data-action="pk-back" aria-label="${h(t('a.backProg'))}">‹</button>
+      <span class="bar-t">${t('btn.addEx')}</span>
     </header>
     <div class="page">
-      <input class="inp" id="pk-q" type="search" placeholder="Rechercher" value="${h(state.pickQuery)}" autocomplete="off" enterkeyhint="search" aria-label="Rechercher un exercice">
-      <button class="btn ghost wide" data-action="pk-new">Créer un exercice</button>
+      <input class="inp" id="pk-q" type="search" placeholder="${h(t('pk.search'))}" value="${h(state.pickQuery)}" autocomplete="off" enterkeyhint="search" aria-label="${h(t('pk.searchAria'))}">
+      <button class="btn ghost wide" data-action="pk-new">${t('btn.newEx')}</button>
       <div id="pk-list">${pickList()}</div>
     </div>
   </div>`;
@@ -925,29 +1265,30 @@ function viewNewEx(){
   const n = state.newEx;
   return `<div class="sub">
     <header class="bar">
-      <button class="icon" data-action="nx-back" aria-label="Retour à la liste">‹</button>
-      <span class="bar-t">Nouvel exercice</span>
-      <button class="btn small primary" data-action="nx-save">Créer</button>
+      <button class="icon" data-action="nx-back" aria-label="${h(t('a.backList'))}">‹</button>
+      <span class="bar-t">${t('nx.title')}</span>
+      <button class="btn small primary" data-action="nx-save">${t('btn.create')}</button>
     </header>
     <div class="page">
-      <label class="field"><span class="flab">Nom</span>
-        <input class="inp" id="nx-name" value="${h(n.name)}" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="Ex. Développé Smith"></label>
-      <label class="field"><span class="flab">Groupe musculaire</span>
-        <span class="sel"><select id="nx-group">${GROUPS.map(g => `<option ${g === n.g ? 'selected' : ''}>${g}</option>`).join('')}</select></span></label>
-      <div class="field"><span class="flab">Type</span>
-        <div class="seg" style="grid-template-columns:1fr 1fr" role="radiogroup" aria-label="Type">
-          <button role="radio" aria-checked="${!n.bw}" data-action="nx-type" data-id="load">Avec charge</button>
-          <button role="radio" aria-checked="${n.bw}" data-action="nx-type" data-id="bw">Poids du corps</button>
+      <label class="field"><span class="flab">${t('nx.name')}</span>
+        <input class="inp" id="nx-name" value="${h(n.name)}" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="${h(t('nx.namePh'))}"></label>
+      <label class="field"><span class="flab">${t('nx.group')}</span>
+        <span class="sel"><select id="nx-group">${GROUPS.map(g => `<option value="${h(g)}" ${g === n.g ? 'selected' : ''}>${h(grpTr(g))}</option>`).join('')}</select></span></label>
+      <div class="field"><span class="flab">${t('nx.type')}</span>
+        <div class="seg" style="grid-template-columns:1fr 1fr" role="radiogroup" aria-label="${h(t('nx.type'))}">
+          <button role="radio" aria-checked="${!n.bw}" data-action="nx-type" data-id="load">${t('nx.load')}</button>
+          <button role="radio" aria-checked="${n.bw}" data-action="nx-type" data-id="bw">${t('nx.bw')}</button>
         </div></div>
-      <div class="field"><span class="flab">Palier de charge</span>
-        <div class="seg" role="radiogroup" aria-label="Palier de charge">${[1, 2, 2.5, 5].map(s => `<button role="radio" aria-checked="${n.step === s}" data-action="nx-step" data-id="${s}">${fmt(s)} kg</button>`).join('')}</div></div>
-      <p class="note">${n.bw ? 'Au poids du corps, la charge que tu saisis correspond au lest (0 sans lest).' : 'Le palier sert aux boutons + et − pendant la séance.'}</p>
+      <div class="field"><span class="flab">${t('nx.step')}</span>
+        <div class="seg" role="radiogroup" aria-label="${h(t('nx.step'))}">${[1, 2, 2.5, 5].map(s => `<button role="radio" aria-checked="${n.step === s}" data-action="nx-step" data-id="${s}">${fmt(s)} kg</button>`).join('')}</div></div>
+      <p class="note">${n.bw ? t('nx.bwNote') : t('nx.stepNote')}</p>
     </div>
   </div>`;
 }
 
 /* ---------- Vue : progrès ---------- */
 const metricObj = () => METRICS.find(m => m.id === state.metric) || METRICS[0];
+const mUnit = m => m.id === 'reps' ? t('unit.reps') : m.unit;
 function defaultMetric(exId){
   if (bwFactor(exId) > 0 && state.weights.length) return 'e1rm';
   const sets = state.sessions.flatMap(s => setsOf(s, exId));
@@ -972,21 +1313,22 @@ function seriesFor(exId, metric){
   }).filter(Boolean);
 }
 function metricHtml(v, m){
-  if (m.id === 'vol'){ const t = volFmt(v).split(' '); return `${t[0]}<small>${t[1]}</small>`; }
-  return `${fmt(Math.round(v * 10) / 10)}<small>${m.unit}</small>`;
+  if (m.id === 'vol'){ const p = volFmt(v).split(' '); return `${p[0]}<small>${p[1]}</small>`; }
+  return `${fmt(Math.round(v * 10) / 10)}<small>${mUnit(m)}</small>`;
 }
 function backupBlock(){
-  return `<h2 class="h2">Sauvegarde</h2>
-    <p class="note">Tes séances, pesées et programmes sont enregistrés sur ce téléphone. Exporte une sauvegarde de temps en temps pour ne rien perdre.</p>
-    <div class="row2"><button class="btn" data-action="export">Exporter</button><button class="btn ghost" data-action="import">Importer</button></div>`;
+  return `<h2 class="h2">${t('bk.title')}</h2>
+    <p class="note">${t('bk.note')}</p>
+    <div class="row2"><button class="btn" data-action="export">${t('bk.export')}</button><button class="btn ghost" data-action="import">${t('bk.import')}</button></div>`;
 }
 function statBlocks(list){
   return `<div class="stats">${list.map(([k, v]) => `<div class="stat"><span class="stat-k">${k}</span><span class="stat-v">${v}</span></div>`).join('')}</div>`;
 }
+const sessName = s => s.programName ? snapName(s.program, s.programName) : (prog(s.program) ? progName(prog(s.program)) : t('fb.session'));
 function viewProgress(){
   if (state.progTab === 'bw') state.progTab = 'ex';
-  const tabs = [['ex', 'Exercices'], ['cal', 'Régularité']];
-  const head = `<div class="seg" style="grid-template-columns:repeat(2,1fr)" role="radiogroup" aria-label="Vue">${tabs.map(([id, l]) => `<button role="radio" aria-checked="${state.progTab === id}" data-action="ptab" data-id="${id}">${l}</button>`).join('')}</div>`;
+  const tabs = [['ex', t('pr.ex')], ['cal', t('pr.cal')]];
+  const head = `<div class="seg" style="grid-template-columns:repeat(2,1fr)" role="radiogroup" aria-label="${h(t('pr.view'))}">${tabs.map(([id, l]) => `<button role="radio" aria-checked="${state.progTab === id}" data-action="ptab" data-id="${id}">${l}</button>`).join('')}</div>`;
   const body = state.progTab === 'cal' ? viewCalendar() : viewExercises();
   return `<div class="page">${head}${body}</div>`;
 }
@@ -994,9 +1336,9 @@ function viewExercises(){
   const list = sorted();
   if (!list.length){
     return `<div class="empty">
-      <p class="empty-t">Pas encore de séance</p>
-      <p>Ta progression s’affichera ici dès ta première séance terminée.</p>
-      <button class="btn primary" data-action="tab" data-id="programs">Choisir un programme</button>
+      <p class="empty-t">${t('pr.emptyT')}</p>
+      <p>${t('pr.emptyS')}</p>
+      <button class="btn primary" data-action="tab" data-id="programs">${t('btn.choose')}</button>
     </div>`;
   }
   const used = new Set(list.flatMap(s => s.items.filter(it => it.sets.length).map(it => it.ex)));
@@ -1011,44 +1353,40 @@ function viewExercises(){
   const pts = seriesFor(state.progEx, m.id);
   const f = bwFactor(state.progEx), hasBw = state.weights.length > 0;
   let note = '';
-  if (f > 0 && m.id !== 'reps'){
-    note = hasBw ? (f < 1 ? ' Ici, la charge inclut environ 65 % de ton poids de corps.' : ' Ici, la charge inclut ton poids de corps.')
-                 : ' Ici, la charge correspond au lest. Ajoute une pesée dans l’onglet Poids pour voir la charge réelle.';
-  }
+  if (f > 0 && m.id !== 'reps') note = hasBw ? (f < 1 ? t('pr.bwPart') : t('pr.bwFull')) : t('pr.bwNone');
   let stats;
   if (pts.length){
     const vals = pts.map(p => p.v);
     const best = Math.max(...vals), last = vals[vals.length - 1], diff = last - vals[0];
     const evo = pts.length > 1 ? (diff >= 0 ? '+' : '−') + metricHtml(Math.abs(diff), m) : '—';
-    stats = statBlocks([['Record', metricHtml(best, m)], ['Dernière', metricHtml(last, m)], ['Évolution', evo]]);
+    stats = statBlocks([[t('st.best'), metricHtml(best, m)], [t('st.last'), metricHtml(last, m)], [t('st.change'), evo]]);
   } else {
-    stats = `<p class="note">${m.id === 'rel' ? 'Ajoute une pesée dans l’onglet Poids pour voir ta force relative.' : 'Pas de donnée pour cette mesure.'}</p>`;
+    stats = `<p class="note">${m.id === 'rel' ? t('pr.relNone') : t('pr.noData')}</p>`;
   }
   let out = `
-    <label class="sel"><span class="vh">Exercice</span><select id="ex-select">${exIds.map(id => `<option value="${h(id)}" ${id === state.progEx ? 'selected' : ''}>${h(exName(id))}</option>`).join('')}</select></label>
-    <div class="seg seg5" role="radiogroup" aria-label="Mesure affichée">${METRICS.map(x => `<button role="radio" aria-checked="${x.id === m.id}" data-action="metric" data-id="${x.id}">${x.short}</button>`).join('')}</div>
+    <label class="sel"><span class="vh">${t('pr.exercise')}</span><select id="ex-select">${exIds.map(id => `<option value="${h(id)}" ${id === state.progEx ? 'selected' : ''}>${h(exName(id))}</option>`).join('')}</select></label>
+    <div class="seg seg5" role="radiogroup" aria-label="${h(t('pr.metric'))}">${METRICS.map(x => `<button role="radio" aria-checked="${x.id === m.id}" data-action="metric" data-id="${x.id}">${t('m.' + x.id)}</button>`).join('')}</div>
     ${pts.length ? '<figure class="chart" id="chart"></figure>' : ''}
-    <p class="cap">${h(m.cap + note)}</p>
+    <p class="cap">${h(t('mc.' + m.id) + note)}</p>
     ${stats}
-    <h2 class="h2">Historique</h2>
+    <h2 class="h2">${t('pr.history')}</h2>
     <ul class="hist">`;
   for (const s of list.slice().reverse()){
-    const name = s.programName || (prog(s.program) || {}).name || 'Séance';
     const open = state.openSession === s.id;
     const nsets = s.items.reduce((a, it) => a + it.sets.length, 0);
     const vol = s.items.reduce((a, it) => a + volumeOf(it.ex, it.sets, s.date), 0);
     out += `<li class="hrow">
       <button class="hhead" data-action="toggle-sess" data-id="${h(s.id)}" aria-expanded="${open}">
         <span class="hdate">${dateShort(s.date)}</span>
-        <span class="hprog">${h(name)}</span>
-        <span class="hmeta">${nsets} série${nsets > 1 ? 's' : ''}, ${volFmt(vol)}</span>
+        <span class="hprog">${h(sessName(s))}</span>
+        <span class="hmeta">${t('n.sets', nsets)}, ${volFmt(vol)}</span>
       </button>`;
     if (open){
       out += '<div class="hbody">' + s.items.map(it => {
         const bw = (exInfo(it.ex) || {}).bw;
-        return `<div class="hex"><span>${h(it.name || exName(it.ex))}</span><span class="hsets">${it.sets.map(x => h(fmtSet(x, bw))).join(' ')}</span></div>`;
+        return `<div class="hex"><span>${h(EX[it.ex] || !it.name ? exName(it.ex) : it.name)}</span><span class="hsets">${it.sets.map(x => h(fmtSet(x, bw))).join(' ')}</span></div>`;
       }).join('') +
-      `<button class="btn ghost danger" data-action="del-sess" data-id="${h(s.id)}">${state.confirm === 'del' + s.id ? 'Confirmer la suppression' : 'Supprimer la séance'}</button></div>`;
+      `<button class="btn ghost danger" data-action="del-sess" data-id="${h(s.id)}">${state.confirm === 'del' + s.id ? t('btn.confirmDel') : t('pr.delSess')}</button></div>`;
     }
     out += '</li>';
   }
@@ -1064,40 +1402,41 @@ function viewWeight(){
   const val = state.bwInput != null ? state.bwInput : existing ? existing.kg : (last ? last.kg : 110);
   let out = `<div class="page">
     <div class="wform">
-      <div class="field"><span class="flab">Poids</span>
+      <div class="field"><span class="flab">${t('w.weight')}</span>
         <div class="stp bw-stp">
-          <button class="stp-b rep" data-action="bw-dec" aria-label="Diminuer le poids">−</button>
-          <label class="stp-v"><input id="bw-in" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="${fmt(val)}" aria-label="Poids en kg"><span>kg</span></label>
-          <button class="stp-b rep" data-action="bw-inc" aria-label="Augmenter le poids">+</button>
+          <button class="stp-b rep" data-action="bw-dec" aria-label="${h(t('a.decW'))}">−</button>
+          <label class="stp-v"><input id="bw-in" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="${fmt(val)}" aria-label="${h(t('a.kg'))}"><span>kg</span></label>
+          <button class="stp-b rep" data-action="bw-inc" aria-label="${h(t('a.incW'))}">+</button>
         </div></div>
-      <label class="field"><span class="flab">Date</span>
-        <input class="inp inp-date" id="bw-date" type="date" value="${date}" max="${today}" aria-label="Date de la pesée"></label>
-      <button class="btn primary wide" data-action="bw-save">${existing ? 'Mettre à jour cette pesée' : 'Enregistrer la pesée'}</button>
+      <label class="field"><span class="flab">${t('w.date')}</span>
+        <input class="inp inp-date" id="bw-date" type="date" lang="${LANG}" value="${date}" max="${today}" aria-label="${h(t('a.dateW'))}"></label>
+      <button class="btn primary wide" data-action="bw-save">${existing ? t('w.update') : t('w.save')}</button>
     </div>`;
-  if (!ws.length) return out + '<p class="note">Ton poids sert aussi à calculer ta force relative et la charge réelle des tractions et des dips.</p></div>';
+  if (!ws.length) return out + `<p class="note">${t('w.note')}</p></div>`;
   const first = ws[0];
   const cut = dayKey(Date.now() - 30 * 86400000);
   let ref30 = null; for (const w of ws){ if (w.d <= cut) ref30 = w; }
   if (!ref30) ref30 = first;
   const sd = v => (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(Math.round(v * 10) / 10)) + '<small>kg</small>';
-  const ranges = [['30', '30 jours'], ['90', '3 mois'], ['all', 'Tout']];
-  out += `<h2 class="h2">Progression</h2>
-    <div class="seg" style="grid-template-columns:repeat(3,1fr)" role="radiogroup" aria-label="Période">${ranges.map(([id, l]) => `<button role="radio" aria-checked="${state.bwRange === id}" data-action="bw-range" data-id="${id}">${l}</button>`).join('')}</div>
+  const ranges = [['30', t('r.30')], ['90', t('r.90')], ['all', t('r.all')]];
+  out += `<h2 class="h2">${t('w.progress')}</h2>
+    <div class="seg" style="grid-template-columns:repeat(3,1fr)" role="radiogroup" aria-label="${h(t('w.period'))}">${ranges.map(([id, l]) => `<button role="radio" aria-checked="${state.bwRange === id}" data-action="bw-range" data-id="${id}">${l}</button>`).join('')}</div>
     <figure class="chart" id="bw-chart"></figure>
-    ${statBlocks([['Actuel', fmt(last.kg) + '<small>kg</small>'], ['Depuis le début', ws.length > 1 ? sd(last.kg - first.kg) : '—'], ['30 jours', ws.length > 1 ? sd(last.kg - ref30.kg) : '—']])}
-    <h2 class="h2">Pesées</h2>
-    <p class="note">Touche une pesée pour la corriger.</p>
+    ${statBlocks([[t('w.current'), fmt(last.kg) + '<small>kg</small>'], [t('w.since'), ws.length > 1 ? sd(last.kg - first.kg) : '—'], [t('r.30'), ws.length > 1 ? sd(last.kg - ref30.kg) : '—']])}
+    <h2 class="h2">${t('w.list')}</h2>
+    <p class="note">${t('w.tapHint')}</p>
     <ul class="hist">`;
   for (const w of ws.slice().reverse()){
     const armed = state.confirm === 'delw' + w.d;
     out += `<li class="wrow ${w.d === date ? 'cur' : ''}">
-      <button class="wedit" data-action="edit-w" data-id="${w.d}"><span class="hdate">${keyDate(w.d).toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'short', year:'numeric'})}</span><span class="wkg">${fmt(w.kg)} kg</span></button>
-      <button class="mini ${armed ? 'warn' : ''}" data-action="del-w" data-id="${w.d}" aria-label="Supprimer la pesée">${armed ? '?' : '×'}</button></li>`;
+      <button class="wedit" data-action="edit-w" data-id="${w.d}"><span class="hdate">${keyDate(w.d).toLocaleDateString(loc(), {weekday:'short', day:'numeric', month:'short', year:'numeric'})}</span><span class="wkg">${fmt(w.kg)} kg</span></button>
+      <button class="mini ${armed ? 'warn' : ''}" data-action="del-w" data-id="${w.d}" aria-label="${h(t('a.delW'))}">${armed ? '?' : '×'}</button></li>`;
   }
   return out + '</ul></div>';
 }
 
 /* Régularité */
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
 function viewCalendar(){
   const now = new Date();
   if (!state.calMonth) state.calMonth = {y:now.getFullYear(), m:now.getMonth()};
@@ -1105,34 +1444,34 @@ function viewCalendar(){
   const byDay = {};
   for (const s of state.sessions){ const k = dayKey(s.date); (byDay[k] = byDay[k] || []).push(s); }
   const todayK = dayKey(now);
-  // Statistiques
   const monday = new Date(now); monday.setHours(0, 0, 0, 0); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
   const week = state.sessions.filter(s => Date.parse(s.date) >= monday.getTime()).length;
   const month = state.sessions.filter(s => { const d = new Date(s.date); return d.getFullYear() === y && d.getMonth() === m; }).length;
   let streak = 0; const c = new Date(now); c.setHours(12, 0, 0, 0);
   if (!byDay[todayK]) c.setDate(c.getDate() - 1);
   while (byDay[dayKey(c)]){ streak++; c.setDate(c.getDate() - 1); }
-  const title = new Date(y, m, 1).toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  const title = new Date(y, m, 1).toLocaleDateString(loc(), {month:'long', year:'numeric'});
   const isCurrent = y === now.getFullYear() && m === now.getMonth();
-  let grid = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => `<span class="cal-h">${d}</span>`).join('');
+  // Initiales des jours, du lundi au dimanche (le 1er janvier 2024 était un lundi)
+  let grid = [0, 1, 2, 3, 4, 5, 6].map(i => `<span class="cal-h">${h(new Date(2024, 0, 1 + i).toLocaleDateString(loc(), {weekday:'narrow'}))}</span>`).join('');
   const lead = (new Date(y, m, 1).getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate();
   for (let i = 0; i < lead; i++) grid += '<span></span>';
   for (let d = 1; d <= days; d++){
     const k = `${y}-${pad2(m + 1)}-${pad2(d)}`, n = (byDay[k] || []).length;
     const cls = ['cday', n ? 'on' : '', n > 1 ? 'two' : '', k === todayK ? 'today' : '', k > todayK ? 'future' : '', state.calDay === k ? 'picked' : ''].filter(Boolean).join(' ');
-    grid += `<button class="${cls}" data-action="cal-day" data-id="${k}" aria-label="${d}${n ? `, ${n} séance${n > 1 ? 's' : ''}` : ''}">${d}</button>`;
+    grid += `<button class="${cls}" data-action="cal-day" data-id="${k}" aria-label="${d}${n ? ', ' + t('n.sessions', n) : ''}">${d}</button>`;
   }
   let info = '';
   if (state.calDay){
     const list = byDay[state.calDay] || [];
-    const label = keyDate(state.calDay).toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
-    info = `<p class="cal-info"><b>${h(label.charAt(0).toUpperCase() + label.slice(1))}</b>${list.length ? h(list.map(s => s.programName || (prog(s.program) || {}).name || 'Séance').join(', ')) : 'Repos'}</p>`;
+    const label = keyDate(state.calDay).toLocaleDateString(loc(), {weekday:'long', day:'numeric', month:'long'});
+    info = `<p class="cal-info"><b>${h(cap1(label))}</b>${list.length ? h(list.map(sessName).join(', ')) : t('cal.rest')}</p>`;
   }
-  return `${statBlocks([['Cette semaine', `${week}<small>séance${week > 1 ? 's' : ''}</small>`], ['Ce mois-ci', `${month}<small>séance${month > 1 ? 's' : ''}</small>`], ['D’affilée', `${streak}<small>jour${streak > 1 ? 's' : ''}</small>`]])}
+  return `${statBlocks([[t('cal.week'), `${week}<small>${t('u.sessions', week)}</small>`], [t('cal.month'), `${month}<small>${t('u.sessions', month)}</small>`], [t('cal.streak'), `${streak}<small>${t('u.days', streak)}</small>`]])}
     <div class="cal-nav">
-      <button class="icon" data-action="cal-prev" aria-label="Mois précédent">‹</button>
-      <span class="cal-t">${h(title.charAt(0).toUpperCase() + title.slice(1))}</span>
-      <button class="icon" data-action="cal-next" aria-label="Mois suivant" ${isCurrent ? 'disabled' : ''}>›</button>
+      <button class="icon" data-action="cal-prev" aria-label="${h(t('a.prevM'))}">‹</button>
+      <span class="cal-t">${h(cap1(title))}</span>
+      <button class="icon" data-action="cal-next" aria-label="${h(t('a.nextM'))}" ${isCurrent ? 'disabled' : ''}>›</button>
     </div>
     <div class="cal">${grid}</div>${info}`;
 }
@@ -1177,8 +1516,8 @@ function drawChart(){
     const m = metricObj();
     const pts = seriesFor(state.progEx, m.id);
     drawLine(el, pts, {
-      aria:`${exName(state.progEx)}, ${pts.length} séance${pts.length > 1 ? 's' : ''}`,
-      label:v => m.id === 'vol' ? volFmt(v) : m.id === 'rel' ? `${fmt(v)} %` : `${fmt(v)} ${m.unit}`,
+      aria:`${exName(state.progEx)}, ${t('n.sessions', pts.length)}`,
+      label:v => m.id === 'vol' ? volFmt(v) : m.id === 'rel' ? `${fmt(v)} %` : `${fmt(v)} ${mUnit(m)}`,
       tick:m.id === 'vol' ? (v, hi) => hi >= 1000 ? fmt(Math.round(v / 100) / 10) + ' t' : fmt(Math.round(v)) : null,
       date:p => dateTiny(p.iso), minPad:1,
     });
@@ -1188,61 +1527,51 @@ function drawChart(){
     const days = state.bwRange === '30' ? 30 : state.bwRange === '90' ? 90 : 0;
     const from = days ? dayKey(Date.now() - days * 86400000) : '';
     const pts = state.weights.filter(w => w.d >= from).map(w => ({iso:w.d, v:w.kg, t:keyDate(w.d).getTime()}));
-    if (!pts.length){ bw.innerHTML = '<p class="chart-empty">Aucune pesée sur cette période.</p>'; }
+    if (!pts.length){ bw.innerHTML = `<p class="chart-empty">${t('w.none')}</p>`; }
     else drawLine(bw, pts, {
-      aria:`Poids de corps, ${pts.length} pesées`, label:v => `${fmt(v)} kg`, time:true,
-      date:p => keyDate(p.iso).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'}), minPad:0.5,
+      aria:`${t('w.chart')}, ${t('n.weighins', pts.length)}`, label:v => `${fmt(v)} kg`, time:true,
+      date:p => keyDate(p.iso).toLocaleDateString(loc(), {day:'2-digit', month:'2-digit'}), minPad:0.5,
     });
   }
 }
 
 /* ---------- Vue : réglages ---------- */
-const INTERS = [
-  {id:'ring',  label:'Anneau', desc:'Un anneau se remplit à chaque exercice terminé, avec un message et l’exercice suivant.'},
-  {id:'chalk', label:'Craie',  desc:'Un nuage de craie explose derrière un message de motivation.'},
-  {id:'slam',  label:'Typo',   desc:'Les mots s’écrasent à l’écran, « Et de deux. », avec une secousse à chaque impact.'},
-  {id:'none',  label:'Aucune', desc:'Passage direct à l’exercice suivant.'},
-];
-const FINALS = [
-  {id:'confetti',  label:'Confettis', desc:'Deux canons de confettis, puis le bilan de ta séance qui s’affiche.'},
-  {id:'medal',     label:'Médaille',  desc:'Une médaille tombe, se balance et brille au-dessus de ton bilan.'},
-  {id:'fireworks', label:'Artifice',  desc:'Un feu d’artifice autour du poids total soulevé pendant la séance.'},
-  {id:'none',      label:'Aucune',    desc:'Retour direct à ta progression.'},
-];
-function prefSeg(list, cur, action){
-  return `<div class="seg" role="radiogroup">${list.map(x => `<button role="radio" aria-checked="${x.id === cur}" data-action="${action}" data-id="${x.id}">${x.label}</button>`).join('')}</div>`;
+const INTERS = ['ring', 'chalk', 'slam', 'none'];
+const FINALS = ['confetti', 'medal', 'fireworks', 'none'];
+const interLabel = id => t('i.' + id), interDesc = id => t('i.' + id + 'D');
+const finalLabel = id => id === 'none' ? t('i.none') : t('f.' + id), finalDesc = id => t('f.' + id + 'D');
+function prefSeg(ids, cur, action, label){
+  return `<div class="seg" role="radiogroup">${ids.map(id => `<button role="radio" aria-checked="${id === cur}" data-action="${action}" data-id="${id}">${h(label(id))}</button>`).join('')}</div>`;
 }
 function viewSettings(){
-  const pi = INTERS.find(x => x.id === state.prefs.inter) || INTERS[0];
-  const pf = FINALS.find(x => x.id === state.prefs.final) || FINALS[0];
+  const pi = INTERS.includes(state.prefs.inter) ? state.prefs.inter : 'ring';
+  const pf = FINALS.includes(state.prefs.final) ? state.prefs.final : 'confetti';
   const sw = (id, title, sub) => `<button class="sw-row" role="switch" aria-checked="${!!state.prefs[id]}" data-action="pref-toggle" data-id="${id}">
       <span class="sw-l">${title}<small>${sub}</small></span><span class="sw" aria-hidden="true"></span></button>`;
   return `<div class="page">
-    <h2 class="h2 first">Séance</h2>
-    ${sw('wake', 'Garder l’écran allumé', 'Pendant une séance en cours')}
-    ${sw('vibrate', 'Vibrations', 'Animations et fin du repos')}
-    ${sw('sound', 'Son à la fin du repos', 'Deux bips quand il est temps de repartir')}
-    <h2 class="h2">Animations</h2>
-    <span class="flab">Entre les exercices</span>
-    ${prefSeg(INTERS, pi.id, 'pref-inter')}
-    <p class="note">${h(pi.desc)}</p>
-    <button class="btn ghost wide" data-action="preview-inter" ${pi.id === 'none' ? 'disabled' : ''}>Voir l’aperçu</button>
-    <span class="flab">Fin de séance</span>
-    ${prefSeg(FINALS, pf.id, 'pref-final')}
-    <p class="note">${h(pf.desc)}</p>
-    <button class="btn ghost wide" data-action="preview-final" ${pf.id === 'none' ? 'disabled' : ''}>Voir l’aperçu</button>
+    <h2 class="h2 first">${t('st.lang')}</h2>
+    <div class="seg" role="radiogroup" aria-label="${h(t('st.lang'))}">${LANGS.map(([id, l]) => `<button role="radio" lang="${id}" aria-checked="${id === LANG}" data-action="pref-lang" data-id="${id}">${l}</button>`).join('')}</div>
+    <h2 class="h2">${t('st.session')}</h2>
+    ${sw('wake', t('sw.wake'), t('sw.wakeS'))}
+    ${sw('vibrate', t('sw.vib'), t('sw.vibS'))}
+    ${sw('sound', t('sw.sound'), t('sw.soundS'))}
+    <h2 class="h2">${t('st.anim')}</h2>
+    <span class="flab">${t('st.between')}</span>
+    ${prefSeg(INTERS, pi, 'pref-inter', interLabel)}
+    <p class="note">${h(interDesc(pi))}</p>
+    <button class="btn ghost wide" data-action="preview-inter" ${pi === 'none' ? 'disabled' : ''}>${t('btn.preview')}</button>
+    <span class="flab">${t('st.end')}</span>
+    ${prefSeg(FINALS, pf, 'pref-final', finalLabel)}
+    <p class="note">${h(finalDesc(pf))}</p>
+    <button class="btn ghost wide" data-action="preview-final" ${pf === 'none' ? 'disabled' : ''}>${t('btn.preview')}</button>
     ${backupBlock()}
   </div>`;
 }
 
 /* ---------- Animations de motivation ---------- */
 const CHALK = '#ECEAE4', SILVER = '#969AA0', GRAPHITE = '#5A5E63', GOLD = '#D9B45A', PALE = '#F3DA92';
-const NUM_WORDS = ['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze'];
-const PHRASES = ['Exercice bouclé.', 'Propre. On enchaîne.', 'Une de plus dans la poche.', 'Bien tenu.', 'Solide.',
-  'C’est comme ça qu’on progresse.', 'Garde ce rythme.', 'Travail fait.', 'Rien ne t’arrête.', 'Ça, c’est du sérieux.'];
-const FIN_SUBS = ['Beau travail.', 'Mission accomplie.', 'Tu peux être fier de toi.', 'Encore une de faite.', 'Rien à redire.'];
-const SAMPLE_INTER = {done:2, total:5, exName:'Tractions', nextName:'Développé militaire debout', nextTarget:'4 × 6', record:false};
-const SAMPLE_FINAL = {programName:'Force', minutes:52, sets:21, volume:6840, records:['Développé couché']};
+const sampleInter = () => ({done:2, total:5, exName:exName('trac'), nextName:exName('dm'), nextTarget:'4 × 6', record:false});
+const sampleFinal = () => ({programName:(PROG_I18N.A[LANG] || PROG_I18N.A.fr)[0], minutes:52, sets:21, volume:6840, records:[exName('dc')]});
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const rnd = (a, b) => a + Math.random() * (b - a);
 const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -1401,9 +1730,9 @@ function explode(x, y, pal){
 }
 
 function playInter(style, info){
-  const phrase = info.record ? `Nouveau record sur ${info.exName} !` : pick(PHRASES);
+  const phrase = info.record ? t('fx.record', {ex:info.exName}) : pick(t('ph'));
   const rec = info.record ? ' rec' : '';
-  const next = `<p class="fx-next">Suivant<b>${h(info.nextName)}</b>${h(info.nextTarget)}</p>`;
+  const next = `<p class="fx-next">${t('fx.next')}<b>${h(info.nextName)}</b>${h(info.nextTarget)}</p>`;
   const rm = reduceMotion();
   if (style === 'chalk'){
     openFx('inter', 'fx-chalk' + rec, `<p class="fx-phrase">${h(phrase)}</p><span class="chalk-line"></span>${next}`);
@@ -1416,7 +1745,7 @@ function playInter(style, info){
     }
     later(3000, () => closeFx());
   } else if (style === 'slam'){
-    const words = info.record ? ['Record', 'battu\u00a0!'] : (info.done === 1 ? ['Et', 'd’un.'] : ['Et', 'de', (NUM_WORDS[info.done] || info.done) + '.']);
+    const words = info.record ? t('slam.rec') : t('slam', info.done);
     const impacts = words.map((w, k) => `fx-shake .16s ease-out ${(0.21 + k * 0.16).toFixed(2)}s`).join(',');
     words.forEach((w, k) => later(Math.round((0.21 + k * 0.16) * 1000), () => buzz(k === words.length - 1 ? 45 : 28)));
     const end = 0.05 + (words.length - 1) * 0.16 + 0.26;
@@ -1437,7 +1766,7 @@ function playInter(style, info){
         <svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-bg" cx="60" cy="60" r="50"/>
           <circle class="ring-fg" cx="60" cy="60" r="50" style="stroke-dasharray:${C.toFixed(2)};stroke-dashoffset:${(C * (1 - to)).toFixed(2)};--o1:${(C * (1 - from)).toFixed(2)};--o2:${(C * (1 - to)).toFixed(2)}"/>
           <g class="ring-ticks">${ticks}</g></svg>
-        <div class="ring-num"><b id="ring-n">${rm ? info.done : Math.max(0, info.done - 1)}</b><small>sur ${n} exercices</small></div>
+        <div class="ring-num"><b id="ring-n">${rm ? info.done : Math.max(0, info.done - 1)}</b><small>${t('fx.ringOf', {n})}</small></div>
       </div>
       <p class="fx-phrase">${h(phrase)}</p>${next}`);
     if (!rm) later(740, () => { const b = document.getElementById('ring-n'); if (b){ b.textContent = info.done; b.classList.add('pop'); } });
@@ -1467,15 +1796,15 @@ function finHtml(s, hero){
   const vol = Math.round(s.volume), unit = vol >= 1000 ? 't' : 'kg';
   const stats = hero
     ? `<p class="fin-hero"><b data-count="${vol}" data-fmt="vol">0</b><span class="u">${unit}</span></p>
-       <p class="fin-hero-l">soulevées aujourd’hui</p>`
+       <p class="fin-hero-l">${t('fin.lifted')}</p>`
     : '';
   const grid = hero
-    ? `<div class="fin-stats two"><div><b data-count="${s.minutes}">0</b><small>minutes</small></div><div><b data-count="${s.sets}">0</b><small>séries</small></div></div>`
-    : `<div class="fin-stats"><div><b data-count="${s.minutes}">0</b><small>minutes</small></div><div><b data-count="${s.sets}">0</b><small>séries</small></div><div><b data-count="${vol}" data-fmt="vol">0</b><small>${vol >= 1000 ? 'tonnes' : 'kg'}</small></div></div>`;
+    ? `<div class="fin-stats two"><div><b data-count="${s.minutes}">0</b><small>${t('unit.minutes')}</small></div><div><b data-count="${s.sets}">0</b><small>${t('unit.sets')}</small></div></div>`
+    : `<div class="fin-stats"><div><b data-count="${s.minutes}">0</b><small>${t('unit.minutes')}</small></div><div><b data-count="${s.sets}">0</b><small>${t('unit.sets')}</small></div><div><b data-count="${vol}" data-fmt="vol">0</b><small>${vol >= 1000 ? t('unit.tonnes') : 'kg'}</small></div></div>`;
   const recs = s.records.length
-    ? `<p class="fin-rec">${s.records.length > 1 ? 'Nouveaux records' : 'Nouveau record'} : ${h(s.records.slice(0, 3).join(', '))}${s.records.length > 3 ? '…' : ''}</p>` : '';
-  return `${stats}<h2 class="fin-t">Séance terminée</h2><p class="fin-s">${h(s.programName)}. ${h(pick(FIN_SUBS))}</p>${grid}${recs}
-    <button class="btn primary fin-btn" data-action="fx-close">Voir ma progression</button>`;
+    ? `<p class="fin-rec">${h(I18N[LANG]['fin.rec'](s.records.length, s.records.slice(0, 3).join(', ') + (s.records.length > 3 ? '…' : '')))}</p>` : '';
+  return `${stats}<h2 class="fin-t">${t('fin.title')}</h2><p class="fin-s">${h(s.programName)}. ${h(pick(t('fin.subs')))}</p>${grid}${recs}
+    <button class="btn primary fin-btn" data-action="fx-close">${t('fin.btn')}</button>`;
 }
 const STAR = '<path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8Z"/>';
 function medalHtml(){
@@ -1543,7 +1872,12 @@ function render(){
   if (state.view === 'newex' && (!state.newEx || !state.edit)) state.view = state.edit ? 'editor' : 'programs';
   const top = document.getElementById('topbar');
   top.hidden = !!PARENT[state.view];
-  for (const t of top.querySelectorAll('.tab')) t.setAttribute('aria-selected', String(t.dataset.id === state.view));
+  for (const tb of top.querySelectorAll('.tab')){
+    tb.setAttribute('aria-selected', String(tb.dataset.id === state.view));
+    const key = {programs:'nav.programs', progress:'nav.progress', weight:'nav.weight'}[tb.dataset.id];
+    if (key) tb.textContent = t(key); else tb.setAttribute('aria-label', t('nav.settings'));
+  }
+  top.querySelector('.tabs').setAttribute('aria-label', t('nav.sections'));
   const v = document.getElementById('view');
   const views = {session:viewSession, editor:viewEditor, picker:viewPicker, newex:viewNewEx, progress:viewProgress, programs:viewPrograms, settings:viewSettings, weight:viewWeight};
   v.innerHTML = (views[state.view] || viewPrograms)();
@@ -1605,8 +1939,8 @@ function addSet(){
   const d = state.draft, inp = inputsFor(d.idx);
   const wEl = document.getElementById('in-w'), rEl = document.getElementById('in-r');
   const w = parseNum(wEl.value), r = parseInt(rEl.value, 10);
-  if (isNaN(w) || w < 0 || w > 1000){ wEl.focus(); toast('Indique une charge valide'); return false; }
-  if (isNaN(r) || r < 1 || r > 200){ rEl.focus(); toast('Indique un nombre de répétitions'); return false; }
+  if (isNaN(w) || w < 0 || w > 1000){ wEl.focus(); toast(t('t.badLoad')); return false; }
+  if (isNaN(r) || r < 1 || r > 200){ rEl.focus(); toast(t('t.badReps')); return false; }
   inp.w = round2(w); inp.r = r;
   const sets = d.items[d.idx].sets;
   sets.push({w:inp.w, r});
@@ -1620,7 +1954,7 @@ function finishSession(){
   const d = state.draft;
   const items = d.items.filter(it => it.sets.length).map(it => ({ex:it.ex, name:exName(it.ex), sets:it.sets.map(s => ({w:s.w, r:s.r}))}));
   state.draft = null; LS.del(K.draft);
-  if (!items.length){ setView('programs'); render(); toast('Séance vide, rien n’a été enregistré'); return; }
+  if (!items.length){ setView('programs'); render(); toast(t('t.emptySession')); return; }
   const s = {id:d.id, date:new Date().toISOString(), program:d.program, programName:d.plan.name,
     minutes:Math.max(1, Math.round((Date.now() - d.startedAt) / 60000)), items};
   const records = items.filter(it => isRecord(it.ex, it.sets, s.id)).map(it => it.name);
@@ -1628,8 +1962,8 @@ function finishSession(){
   state.openSession = s.id;
   state.progEx = items[0].ex; state.metric = defaultMetric(items[0].ex); state.progTab = 'ex';
   setView('progress'); render();
-  if (state.prefs.final === 'none') toast('Séance enregistrée');
-  else playFinal(state.prefs.final, {programName:s.programName, minutes:s.minutes,
+  if (state.prefs.final === 'none') toast(t('t.sessionSaved'));
+  else playFinal(state.prefs.final, {programName:sessName(s), minutes:s.minutes,
     sets:items.reduce((a, it) => a + it.sets.length, 0),
     volume:items.reduce((a, it) => a + volumeOf(it.ex, it.sets, s.date), 0), records});
 }
@@ -1637,7 +1971,7 @@ function finishSession(){
 /* ---------- Actions : programmes ---------- */
 function openEditor(id){
   const p = id ? prog(id) : null;
-  state.edit = p ? {id:p.id, name:p.name, desc:p.desc || '', rest:restOf(p), items:clone(p.items), isNew:false}
+  state.edit = p ? {id:p.id, name:progName(p), desc:p.desc || '', rest:restOf(p), items:clone(p.items), isNew:false}
                  : {id:null, name:'', desc:'', rest:90, items:[], isNew:true};
   setView('editor');
 }
@@ -1645,9 +1979,10 @@ function saveEditor(){
   const e = state.edit;
   const nameEl = document.getElementById('ed-name');
   const name = (nameEl ? nameEl.value : e.name).trim();
-  if (!name){ if (nameEl) nameEl.focus(); toast('Donne un nom au programme'); return false; }
-  if (!e.items.length){ toast('Ajoute au moins un exercice'); return false; }
-  const p = {id:e.id || newId('p'), name, rest:e.rest || 90, items:e.items};
+  if (!name){ if (nameEl) nameEl.focus(); toast(t('t.progName')); return false; }
+  if (!e.items.length){ toast(t('t.progEmpty')); return false; }
+  const pm = e.id && PROG_I18N[e.id];
+  const p = {id:e.id || newId('p'), name:pm && name === (pm[LANG] || pm.fr)[0] ? pm.fr[0] : name, rest:e.rest || 90, items:e.items};
   if (e.desc) p.desc = e.desc;
   const i = state.programs.findIndex(x => x.id === p.id);
   if (i >= 0) state.programs[i] = p; else state.programs.push(p);
@@ -1655,7 +1990,7 @@ function saveEditor(){
   state.openProgram = p.id;
   state.edit = null;
   setView('programs');
-  toast(e.isNew ? 'Programme créé' : 'Programme enregistré');
+  toast(e.isNew ? t('t.progCreated') : t('t.progSaved'));
   return true;
 }
 function addToEdit(exId){
@@ -1664,14 +1999,14 @@ function addToEdit(exId){
   state.pickQuery = '';
   state.scrollEnd = true;
   setView('editor');
-  toast(`${ex ? ex.name : 'Exercice'} ajouté`);
+  toast(t('t.exAdded', {ex:exName(exId)}));
 }
 function saveNewEx(){
   const n = state.newEx;
   const el = document.getElementById('nx-name');
   const name = (el ? el.value : n.name).trim();
-  if (!name){ if (el) el.focus(); toast('Donne un nom à l’exercice'); return; }
-  const existing = allExEntries().find(e => norm(e.name) === norm(name));
+  if (!name){ if (el) el.focus(); toast(t('t.exName')); return; }
+  const existing = allExEntries().find(e => norm(e.name) === norm(name) || norm(exName(e.id)) === norm(name));
   state.newEx = null;
   if (existing){ addToEdit(existing.id); return; }
   const id = newId('x');
@@ -1690,18 +2025,18 @@ function bwStep(dir){
 function saveWeight(){
   const el = document.getElementById('bw-in');
   const v = el ? parseNum(el.value) : NaN;
-  if (isNaN(v) || v < 20 || v > 400){ if (el) el.focus(); toast('Indique un poids valide'); return false; }
+  if (isNaN(v) || v < 20 || v > 400){ if (el) el.focus(); toast(t('t.badWeight')); return false; }
   const dEl = document.getElementById('bw-date');
   const d = dEl && dEl.value ? dEl.value : dayKey(Date.now());
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)){ if (dEl) dEl.focus(); toast('Choisis une date valide'); return false; }
-  if (d > dayKey(Date.now())){ if (dEl) dEl.focus(); toast('La date ne peut pas être dans le futur'); return false; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)){ if (dEl) dEl.focus(); toast(t('t.badDate')); return false; }
+  if (d > dayKey(Date.now())){ if (dEl) dEl.focus(); toast(t('t.futureDate')); return false; }
   const kg = Math.round(v * 10) / 10;
   const i = state.weights.findIndex(w => w.d === d);
   if (i >= 0) state.weights[i].kg = kg; else state.weights.push({d, kg});
   state.weights.sort((a, b) => a.d.localeCompare(b.d));
   state.bwInput = null; state.bwDate = null;
   persistWeights();
-  toast(i >= 0 ? 'Pesée mise à jour' : 'Pesée enregistrée');
+  toast(i >= 0 ? t('t.wUpdated') : t('t.wSaved'));
   return true;
 }
 
@@ -1712,15 +2047,15 @@ function exportData(){
   const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `carnet-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
+  a.href = url; a.download = `${t('bk.file')}-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  toast('Sauvegarde téléchargée');
+  toast(t('t.backup'));
 }
 function importData(text){
   let d;
-  try { d = JSON.parse(text); } catch(e){ toast('Ce fichier n’est pas une sauvegarde valide'); return; }
-  if (!d || !Array.isArray(d.sessions)){ toast('Ce fichier n’est pas une sauvegarde valide'); return; }
+  try { d = JSON.parse(text); } catch(e){ toast(t('t.badFile')); return; }
+  if (!d || !Array.isArray(d.sessions)){ toast(t('t.badFile')); return; }
   const ids = new Set(state.sessions.map(s => s.id));
   let added = 0;
   for (const s of d.sessions){
@@ -1751,9 +2086,9 @@ function importData(text){
   state.progEx = null;
   render();
   const msg = [];
-  if (progs) msg.push(`${progs} programme${progs > 1 ? 's' : ''} importé${progs > 1 ? 's' : ''}`);
-  if (added) msg.push(`${added} séance${added > 1 ? 's' : ''} importée${added > 1 ? 's' : ''}`);
-  toast(msg.length ? msg.join(', ') : 'Rien de nouveau dans ce fichier');
+  if (progs) msg.push(t('t.progsImported', progs));
+  if (added) msg.push(t('t.sessImported', added));
+  toast(msg.length ? msg.join(', ') : t('t.nothing'));
 }
 
 /* ---------- Événements ---------- */
@@ -1832,7 +2167,7 @@ document.addEventListener('click', ev => {
     case 'start': if (!d) startSession(id); break;
     case 'resume': if (d) setView('session'); break;
     case 'abandon':
-      if (prev === 'abandon'){ state.draft = null; LS.del(K.draft); toast('Séance abandonnée'); }
+      if (prev === 'abandon'){ state.draft = null; LS.del(K.draft); toast(t('t.abandoned')); }
       else arm('abandon');
       break;
     case 'edit-prog': openEditor(id); break;
@@ -1840,7 +2175,7 @@ document.addEventListener('click', ev => {
     case 'restore-defaults': {
       const missing = DEFAULT_PROGRAMS.filter(dp => !prog(dp.id)).map(clone);
       state.programs = missing.concat(state.programs); persistPrograms();
-      toast('Programmes d’origine réinstallés');
+      toast(t('t.restored'));
       break;
     }
 
@@ -1864,13 +2199,16 @@ document.addEventListener('click', ev => {
       if (prev === 'delp' + id){
         state.programs = state.programs.filter(p => p.id !== id); persistPrograms();
         if (state.openProgram === id) state.openProgram = null;
-        toast('Programme supprimé');
+        toast(t('t.progDeleted'));
       } else arm('delp' + id);
       break;
     case 'pref-inter': state.prefs.inter = id; LS.set(K.prefs, state.prefs); break;
     case 'pref-final': state.prefs.final = id; LS.set(K.prefs, state.prefs); break;
-    case 'preview-inter': if (state.prefs.inter !== 'none') playInter(state.prefs.inter, SAMPLE_INTER); if (!prev) return; break;
-    case 'preview-final': if (state.prefs.final !== 'none') playFinal(state.prefs.final, SAMPLE_FINAL); if (!prev) return; break;
+    case 'preview-inter': if (state.prefs.inter !== 'none') playInter(state.prefs.inter, sampleInter()); if (!prev) return; break;
+    case 'preview-final': if (state.prefs.final !== 'none') playFinal(state.prefs.final, sampleFinal()); if (!prev) return; break;
+    case 'pref-lang':
+      if (LOCALES[id]){ state.prefs.lang = id; LS.set(K.prefs, state.prefs); LANG = id; document.documentElement.lang = id; }
+      break;
 
     case 'ed-cancel': state.edit = null; setView('programs'); break;
     case 'ed-save': if (!saveEditor()) return; break;
@@ -1883,7 +2221,7 @@ document.addEventListener('click', ev => {
     case 'ed-delete':
       if (prev === 'ed-delete'){
         state.programs = state.programs.filter(p => p.id !== e.id); persistPrograms();
-        state.edit = null; setView('programs'); toast('Programme supprimé');
+        state.edit = null; setView('programs'); toast(t('t.progDeleted'));
       } else arm('ed-delete');
       break;
 
@@ -1906,7 +2244,7 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'del-w':
-      if (prev === 'delw' + id){ state.weights = state.weights.filter(w => w.d !== id); persistWeights(); toast('Pesée supprimée'); }
+      if (prev === 'delw' + id){ state.weights = state.weights.filter(w => w.d !== id); persistWeights(); toast(t('t.wDeleted')); }
       else arm('delw' + id);
       break;
     case 'cal-prev': case 'cal-next': {
@@ -1925,7 +2263,7 @@ document.addEventListener('click', ev => {
       if (prev === 'del' + id){
         state.sessions = state.sessions.filter(s => s.id !== id); persist();
         if (state.openSession === id) state.openSession = null;
-        toast('Séance supprimée');
+        toast(t('t.sessDeleted'));
       } else arm('del' + id);
       break;
     case 'export': exportData(); break;
@@ -1969,7 +2307,7 @@ document.addEventListener('change', ev => {
   } else if (el.id === 'nx-group' && state.newEx){
     state.newEx.g = el.value;
   } else if (el.id === 'import-file' && el.files && el.files[0]){
-    el.files[0].text().then(importData).catch(() => toast('Lecture du fichier impossible'));
+    el.files[0].text().then(importData).catch(() => toast(t('t.readFail')));
     el.value = '';
   }
 });
