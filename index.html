@@ -1592,18 +1592,39 @@ function buzz(pattern){
   if (!state.prefs.vibrate || !navigator.vibrate) return;
   try { navigator.vibrate(pattern); } catch(e){}
 }
-/* ---------- Effets sonores : tout est synthétisé, aucun fichier audio ---------- */
-let actx = null, master = null, noiseBuf = null, bus = null;
+/* ---------- Effets sonores : sombres et agressifs, entièrement synthétisés ---------- */
+let actx = null, master = null, comp = null, noiseBuf = null, bus = null;
+const curves = {};
+function curve(k){
+  if (curves[k]) return curves[k];
+  const n = 2048, c = new Float32Array(n);
+  for (let i = 0; i < n; i++){ const x = i / (n - 1) * 2 - 1; c[i] = ((1 + k) * x) / (1 + k * Math.abs(x)); }
+  return (curves[k] = c);
+}
+/* Réverbération sombre : bruit filtré qui décroît sur 2,4 s */
+function impulse(){
+  const len = Math.round(actx.sampleRate * 2.4), b = actx.createBuffer(2, len, actx.sampleRate);
+  for (let ch = 0; ch < 2; ch++){
+    const d = b.getChannelData(ch); let lp = 0;
+    for (let i = 0; i < len; i++){ lp = lp * 0.84 + (Math.random() * 2 - 1) * 0.16; d[i] = lp * Math.pow(1 - i / len, 2.6) * 2.2; }
+  }
+  return b;
+}
 function audio(){
   try {
     if (!actx){
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       actx = new AC();
-      const comp = actx.createDynamicsCompressor();
-      comp.threshold.value = -14; comp.knee.value = 12; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.2;
-      master = actx.createGain(); master.gain.value = 0.8;
-      master.connect(comp); comp.connect(actx.destination);
+      comp = actx.createDynamicsCompressor();
+      comp.threshold.value = -18; comp.knee.value = 6; comp.ratio.value = 8; comp.attack.value = 0.002; comp.release.value = 0.25;
+      const sat = actx.createWaveShaper(); sat.curve = curve(3); sat.oversample = '2x';
+      const verb = actx.createConvolver(); verb.buffer = impulse();
+      const wet = actx.createGain(); wet.gain.value = 0.3;
+      master = actx.createGain(); master.gain.value = 0.75;
+      master.connect(sat); sat.connect(comp);
+      master.connect(verb); verb.connect(wet); wet.connect(comp);
+      comp.connect(actx.destination);
     }
     if (actx.state === 'suspended') actx.resume().catch(() => {});
     return actx;
@@ -1640,112 +1661,132 @@ function env(g, t0, peak, a, d){
   g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + a);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + a + d);
 }
-function noiseHit(t0, type, freq, q, peak, a, d, pan){
-  const n = noise(), f = actx.createBiquadFilter(), g = actx.createGain();
-  f.type = type; f.frequency.value = freq; if (q) f.Q.value = q;
-  env(g, t0, peak, a, d); n.connect(f); f.connect(g); g.connect(out(pan));
-  n.start(t0); n.stop(t0 + a + d + 0.05);
+function dist(k){ const ws = actx.createWaveShaper(); ws.curve = curve(k); ws.oversample = '4x'; return ws; }
+function filt(type, freq, q){ const f = actx.createBiquadFilter(); f.type = type; f.frequency.value = freq; if (q) f.Q.value = q; return f; }
+/* Bruit filtré, éventuellement saturé */
+function noiseHit(t0, type, freq, q, peak, a, d, pan, k){
+  const n = noise(), f = filt(type, freq, q), g = actx.createGain();
+  env(g, t0, peak, a, d);
+  if (k){ const ds = dist(k); n.connect(f); f.connect(ds); ds.connect(g); } else { n.connect(f); f.connect(g); }
+  g.connect(out(pan)); n.start(t0); n.stop(t0 + a + d + 0.05);
   return f;
 }
-function tone(t0, type, freq, peak, a, d, pan){
-  const o = actx.createOscillator(), g = actx.createGain();
-  o.type = type; o.frequency.value = freq;
-  env(g, t0, peak, a, d); o.connect(g); g.connect(out(pan));
-  o.start(t0); o.stop(t0 + a + d + 0.05);
-  return o;
+/* Kick saturé façon techno industrielle */
+function kick(t0, s = 1, pan = 0, k = 18){
+  const o = actx.createOscillator(), d = dist(k), g = actx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(200, t0); o.frequency.exponentialRampToValueAtTime(50, t0 + 0.07); o.frequency.exponentialRampToValueAtTime(33, t0 + 0.45);
+  env(g, t0, 0.95 * s, 0.002, 0.5);
+  o.connect(d); d.connect(g); g.connect(out(pan)); o.start(t0); o.stop(t0 + 0.6);
+  noiseHit(t0, 'highpass', 2500, 0, 0.35 * s, 0.0008, 0.014, pan);
 }
+/* Frappe métallique (partiels inharmoniques) */
+function metal(t0, base, s, decay, pan = 0, k = 6){
+  const bp = filt('bandpass', base * 2.2, 1.1), d = dist(k), g = actx.createGain();
+  env(g, t0, 0.2 * s, 0.001, decay);
+  [1, 1.47, 1.97, 2.53, 3.11].forEach(r => { const o = actx.createOscillator(); o.type = 'square'; o.frequency.value = base * r; o.connect(bp); o.start(t0); o.stop(t0 + decay + 0.1); });
+  bp.connect(d); d.connect(g); g.connect(out(pan));
+}
+/* Basse profonde qui chute */
+function sub(t0, from, to, s, d){
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(from, t0); o.frequency.exponentialRampToValueAtTime(to, t0 + d * 0.9);
+  env(g, t0, s, 0.01, d); o.connect(g); g.connect(out()); o.start(t0); o.stop(t0 + d + 0.1);
+}
+/* Accord cuivré sombre et saturé */
+function stab(t0, notes, dur, s = 1){
+  const lp = filt('lowpass', 300, 2), d = dist(6), g = actx.createGain();
+  lp.frequency.setValueAtTime(300, t0); lp.frequency.exponentialRampToValueAtTime(2200, t0 + 0.04); lp.frequency.exponentialRampToValueAtTime(420, t0 + dur);
+  env(g, t0, 0.2 * s, 0.01, dur);
+  notes.forEach(f => [-7, 0, 7].forEach(c => { const o = actx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = c; o.connect(lp); o.start(t0); o.stop(t0 + dur + 0.1); }));
+  lp.connect(d); d.connect(g); g.connect(out());
+}
+const DM = [73.42, 110, 146.83, 174.61], BB = [58.27, 87.31, 116.54, 146.83];
 const SFX = {
-  /* Impact sourd : mots qui s'écrasent */
+  /* Impact : kick saturé + métal + souffle grave */
   thud(at, s = 1, pan = 0){
     const t0 = actx.currentTime + at;
-    const o = tone(t0, 'sine', 140, 0.9 * s, 0.005, 0.32, pan);
-    o.frequency.setValueAtTime(140, t0); o.frequency.exponentialRampToValueAtTime(42, t0 + 0.22);
-    noiseHit(t0, 'lowpass', 900, 0, 0.5 * s, 0.002, 0.12, pan);
+    kick(t0, s, pan);
+    metal(t0, 170, 0.8 * s, 0.28, pan);
+    noiseHit(t0, 'lowpass', 600, 0, 0.45 * s, 0.002, 0.16, pan, 8);
   },
-  /* Fissure : craquement sec et éclats */
+  /* Fissure : déchirure saturée, éclats et chute de basse */
   crack(at){
     const t0 = actx.currentTime + at;
-    noiseHit(t0, 'highpass', 1500, 0, 0.8, 0.002, 0.22, 0);
-    for (let i = 0; i < 8; i++) noiseHit(t0 + Math.random() * 0.14, 'bandpass', 2000 + Math.random() * 3200, 2, 0.5, 0.001, 0.025, (Math.random() - 0.5) * 0.9);
-    SFX.thud(at, 1.25);
+    noiseHit(t0, 'highpass', 1100, 0, 0.9, 0.001, 0.32, 0, 30);
+    for (let i = 0; i < 9; i++) noiseHit(t0 + Math.random() * 0.18, 'bandpass', 1300 + Math.random() * 2800, 3, 0.5, 0.001, 0.03, (Math.random() - 0.5) * 1.2, 20);
+    kick(t0, 1.3, 0, 30);
+    metal(t0, 110, 1, 0.7);
+    sub(t0, 70, 26, 0.9, 1.1);
   },
-  /* Souffle qui monte ou descend */
+  /* Montée ou descente sombre : bruit résonant + scies graves saturées */
   whoosh(at, dur = 0.45, up = true, vol = 0.35, pan = 0){
-    const t0 = actx.currentTime + at;
-    const n = noise(), f = actx.createBiquadFilter(), g = actx.createGain();
-    f.type = 'bandpass'; f.Q.value = 1.1;
-    f.frequency.setValueAtTime(up ? 350 : 2600, t0); f.frequency.exponentialRampToValueAtTime(up ? 2800 : 300, t0 + dur);
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + dur * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    n.connect(f); f.connect(g); g.connect(out(pan)); n.start(t0); n.stop(t0 + dur + 0.05);
+    const t0 = actx.currentTime + at, t1 = t0 + dur;
+    const f = noiseHit(t0, 'bandpass', 300, 4, vol, dur * 0.85, dur * 0.15, pan, 10);
+    f.frequency.setValueAtTime(up ? 150 : 1800, t0); f.frequency.exponentialRampToValueAtTime(up ? 1800 : 120, t1);
+    const lp = filt('lowpass', 600, 1), d = dist(8), g = actx.createGain();
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol * 0.45, t0 + dur * 0.85); g.gain.exponentialRampToValueAtTime(0.0001, t1);
+    [0, 9].forEach(c => { const o = actx.createOscillator(); o.type = 'sawtooth'; o.detune.value = c;
+      o.frequency.setValueAtTime(up ? 40 : 160, t0); o.frequency.exponentialRampToValueAtTime(up ? 160 : 38, t1);
+      o.connect(lp); o.start(t0); o.stop(t1 + 0.05); });
+    lp.connect(d); d.connect(g); g.connect(out(pan));
   },
-  /* Clochette claire */
+  /* Gong sombre (remplace la clochette) */
   ding(at, freq = 1046.5, vol = 0.35, pan = 0){
-    const t0 = actx.currentTime + at;
-    [[1, 1, 1.2], [2.76, 0.35, 0.6], [5.4, 0.15, 0.3]].forEach(([m, v, d]) => tone(t0, 'sine', freq * m, vol * v, 0.004, d, pan));
+    const t0 = actx.currentTime + at, base = Math.max(55, freq / 8);
+    [[1, 1, 2.2], [1.52, 0.6, 1.6], [2.16, 0.45, 1.2], [2.71, 0.3, 0.9], [3.6, 0.2, 0.6]].forEach(([m, v, d]) => {
+      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'triangle'; o.frequency.value = base * m;
+      env(g, t0, vol * v * 0.9, 0.003, d); o.connect(g); g.connect(out(pan)); o.start(t0); o.stop(t0 + d + 0.05);
+    });
+    kick(t0, vol * 1.4, pan, 10);
   },
-  /* Nuage de craie */
+  /* Explosion de poussière : bruit saturé qui s'étouffe + kick */
   poof(at){
     const t0 = actx.currentTime + at;
-    const f = noiseHit(t0, 'lowpass', 2400, 0, 0.7, 0.01, 0.55, 0);
-    f.frequency.setValueAtTime(2400, t0); f.frequency.exponentialRampToValueAtTime(250, t0 + 0.5);
-    SFX.thud(at, 0.5);
+    const f = noiseHit(t0, 'lowpass', 3000, 0, 0.85, 0.008, 0.65, 0, 14);
+    f.frequency.setValueAtTime(3000, t0); f.frequency.exponentialRampToValueAtTime(180, t0 + 0.6);
+    kick(t0, 0.8);
+    sub(t0, 60, 30, 0.6, 0.7);
   },
-  /* Trait de craie */
+  /* Raclement granuleux */
   scratch(at, dur = 0.35){
     const t0 = actx.currentTime + at;
-    const n = noise(), f = actx.createBiquadFilter(), g = actx.createGain();
-    f.type = 'bandpass'; f.Q.value = 3;
-    f.frequency.setValueAtTime(2200, t0); f.frequency.linearRampToValueAtTime(3400, t0 + dur);
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.16, t0 + 0.03);
-    g.gain.setValueAtTime(0.16, t0 + dur - 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    n.connect(f); f.connect(g); g.connect(out()); n.start(t0); n.stop(t0 + dur + 0.05);
+    for (let x = 0; x < dur; x += 0.028) noiseHit(t0 + x, 'bandpass', 900 + (x / dur) * 700, 6, 0.28, 0.002, 0.022, 0, 25);
   },
-  /* Canon à confettis */
+  /* Canon : détonation saturée */
   pop(at, pan = 0, vol = 0.7){
     const t0 = actx.currentTime + at;
-    const o = tone(t0, 'triangle', 420, vol, 0.002, 0.12, pan);
-    o.frequency.setValueAtTime(420, t0); o.frequency.exponentialRampToValueAtTime(90, t0 + 0.09);
-    noiseHit(t0, 'bandpass', 1400, 0.8, vol * 0.8, 0.001, 0.08, pan);
+    kick(t0, vol * 1.2, pan, 25);
+    noiseHit(t0, 'lowpass', 2500, 0, vol, 0.001, 0.3, pan, 20);
   },
-  /* Scintillement */
+  /* Braises : petites frappes métalliques graves dans la réverbération */
   sparkle(at, dur = 0.9, count = 14, vol = 0.12){
-    for (let i = 0; i < count; i++) SFX.ding(at + Math.random() * dur, 2200 + Math.random() * 3800, vol * (0.5 + Math.random() * 0.5), (Math.random() - 0.5) * 1.4);
-  },
-  /* Sifflement de fusée */
-  whistle(at, dur = 0.9, pan = 0){
     const t0 = actx.currentTime + at;
-    const o = actx.createOscillator(), g = actx.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(700, t0); o.frequency.exponentialRampToValueAtTime(2600, t0 + dur);
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.08, t0 + 0.08);
-    g.gain.setValueAtTime(0.08, t0 + dur * 0.8); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(g); g.connect(out(pan)); o.start(t0); o.stop(t0 + dur + 0.05);
+    for (let i = 0; i < Math.ceil(count / 2); i++) metal(t0 + Math.random() * dur, 280 + Math.random() * 420, vol * 5, 0.14, (Math.random() - 0.5) * 1.4, 4);
   },
-  /* Explosion de feu d'artifice avec crépitements */
+  /* Fusée : montée menaçante */
+  whistle(at, dur = 0.9, pan = 0){ SFX.whoosh(at, dur, true, 0.16, pan); },
+  /* Explosion : basse profonde, souffle saturé, crépitements */
   boom(at, pan = 0, vol = 1){
     const t0 = actx.currentTime + at;
-    const f = noiseHit(t0, 'lowpass', 1800, 0, 0.8 * vol, 0.004, 1.1, pan);
-    f.frequency.setValueAtTime(1800, t0); f.frequency.exponentialRampToValueAtTime(200, t0 + 0.8);
-    SFX.thud(at, 0.9 * vol, pan);
-    for (let i = 0; i < 12; i++) noiseHit(t0 + 0.12 + Math.random() * 0.7, 'highpass', 3000, 0, 0.25 * vol, 0.001, 0.02, pan + (Math.random() - 0.5) * 0.4);
+    sub(t0, 62, 22, 0.9 * vol, 1.6);
+    const f = noiseHit(t0, 'lowpass', 1400, 0, 0.75 * vol, 0.004, 1.3, pan, 15);
+    f.frequency.setValueAtTime(1400, t0); f.frequency.exponentialRampToValueAtTime(110, t0 + 1.1);
+    kick(t0, vol, pan, 22);
+    for (let i = 0; i < 10; i++) noiseHit(t0 + 0.1 + Math.random() * 0.9, 'bandpass', 800 + Math.random() * 1800, 4, 0.3 * vol, 0.001, 0.025, pan + (Math.random() - 0.5) * 0.5, 20);
   },
-  /* Médaille qui tinte */
+  /* Enclume (médaille) */
   clink(at){
     const t0 = actx.currentTime + at;
-    [[1840, 0.3, 1.1], [2950, 0.22, 0.8], [4360, 0.14, 0.6], [6020, 0.08, 0.4]].forEach(([f, v, d]) => tone(t0, 'sine', f, v, 0.002, d, 0));
-    SFX.thud(at, 0.4);
+    metal(t0, 520, 1.1, 0.9);
+    metal(t0, 1240, 0.6, 0.5);
+    kick(t0, 0.9);
   },
-  /* Petite fanfare : do, mi, sol, do */
+  /* « Fanfare » sombre : accords mineurs martelés */
   fanfare(at){
     const t0 = actx.currentTime + at;
-    [[523.25, 0], [659.25, 0.12], [783.99, 0.24], [1046.5, 0.36]].forEach(([f, dt], i) => {
-      const last = i === 3, d = last ? 0.9 : 0.22, s = t0 + dt;
-      const o = actx.createOscillator(), o2 = actx.createOscillator(), g = actx.createGain(), lp = actx.createBiquadFilter();
-      o.type = 'sawtooth'; o2.type = 'triangle'; o.frequency.value = f; o2.frequency.value = f * 1.003;
-      lp.type = 'lowpass'; lp.frequency.value = 2400;
-      env(g, s, last ? 0.22 : 0.16, 0.015, d);
-      o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out());
-      o.start(s); o2.start(s); o.stop(s + d + 0.1); o2.stop(s + d + 0.1);
-    });
+    [[0, DM, 0.16], [0.18, DM, 0.16], [0.38, BB, 0.18]].forEach(([dt, ch, d]) => { stab(t0 + dt, ch, d); kick(t0 + dt, 0.8); });
+    stab(t0 + 0.6, DM, 1.2, 1.2); kick(t0 + 0.6, 1.1); sub(t0 + 0.6, 73.4, 36.7, 0.7, 1.3);
   },
 };
 function sfx(name, ...args){
@@ -1764,7 +1805,7 @@ function beep(){
       const osc = actx.createOscillator(), g = actx.createGain();
       osc.type = 'sine'; osc.frequency.value = f;
       env(g, t0 + o, 0.5, 0.02, 0.18);
-      osc.connect(g); g.connect(master);
+      osc.connect(g); g.connect(comp);
       osc.start(t0 + o); osc.stop(t0 + o + 0.22);
     });
   } catch(e){}
