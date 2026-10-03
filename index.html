@@ -111,7 +111,7 @@ main{flex:1;display:flex;flex-direction:column}
 .prog-actions>.primary{flex-grow:1.5}
 .tab-ic{display:inline-flex;align-items:center;padding:0 10px}
 .tab-ic svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-@media (max-width:340px){.mark{display:none}}
+@media (max-width:430px){.mark{display:none}.tabs{margin-left:0;width:100%;justify-content:space-between}.tab{padding:0 8px}.tab[aria-selected="true"]::after{left:8px;right:8px}}
 
 /* Séance */
 .session{flex:1;display:flex;flex-direction:column;gap:8px;padding:0 var(--pad) 10px}
@@ -242,6 +242,11 @@ main{flex:1;display:flex;flex-direction:column}
 .bw-stp{grid-template-columns:52px minmax(0,1fr) 52px}
 .wrow{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 12px;border-radius:12px;background:var(--surface)}
 .wrow .hdate{flex:1}
+.wrow.cur{box-shadow:inset 0 0 0 1px var(--muted)}
+.wedit{flex:1;display:flex;align-items:center;gap:10px;min-height:40px;text-align:left}
+.wform{display:flex;flex-direction:column;gap:10px}
+.inp-date{font:600 17px/1 var(--sans);color-scheme:dark}
+.chart-empty{margin:0;height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)}
 .wkg{font:600 19px/1 var(--cond);font-variant-numeric:tabular-nums}
 .mini.warn{background:transparent;border:1px solid var(--danger);color:var(--danger)}
 .rest-stp{max-width:220px}
@@ -415,6 +420,7 @@ main{flex:1;display:flex;flex-direction:column}
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" data-action="tab" data-id="programs">Programmes</button>
       <button class="tab" role="tab" data-action="tab" data-id="progress">Progrès</button>
+      <button class="tab" role="tab" data-action="tab" data-id="weight">Poids</button>
       <button class="tab tab-ic" role="tab" data-action="tab" data-id="settings" aria-label="Réglages"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
     </nav>
   </header>
@@ -540,7 +546,7 @@ const state = {
   progEx:null, metric:'e1rm', openSession:null, confirm:null, flash:null,
   edit:null, pickQuery:'', newEx:null, scrollEnd:false,
   prefs:Object.assign({inter:'ring', final:'confetti', wake:true, vibrate:true, sound:false}, LS.get(K.prefs, {}) || {}),
-  weights:[], progTab:'ex', calMonth:null, calDay:null, slide:null,
+  weights:[], progTab:'ex', calMonth:null, calDay:null, slide:null, bwDate:null, bwInput:null, bwRange:'all',
 };
 {
   const ps = LS.get(K.programs, null);
@@ -978,9 +984,10 @@ function statBlocks(list){
   return `<div class="stats">${list.map(([k, v]) => `<div class="stat"><span class="stat-k">${k}</span><span class="stat-v">${v}</span></div>`).join('')}</div>`;
 }
 function viewProgress(){
-  const tabs = [['ex', 'Exercices'], ['bw', 'Poids'], ['cal', 'Régularité']];
-  const head = `<div class="seg" style="grid-template-columns:repeat(3,1fr)" role="radiogroup" aria-label="Vue">${tabs.map(([id, l]) => `<button role="radio" aria-checked="${state.progTab === id}" data-action="ptab" data-id="${id}">${l}</button>`).join('')}</div>`;
-  const body = state.progTab === 'bw' ? viewWeight() : state.progTab === 'cal' ? viewCalendar() : viewExercises();
+  if (state.progTab === 'bw') state.progTab = 'ex';
+  const tabs = [['ex', 'Exercices'], ['cal', 'Régularité']];
+  const head = `<div class="seg" style="grid-template-columns:repeat(2,1fr)" role="radiogroup" aria-label="Vue">${tabs.map(([id, l]) => `<button role="radio" aria-checked="${state.progTab === id}" data-action="ptab" data-id="${id}">${l}</button>`).join('')}</div>`;
+  const body = state.progTab === 'cal' ? viewCalendar() : viewExercises();
   return `<div class="page">${head}${body}</div>`;
 }
 function viewExercises(){
@@ -1052,33 +1059,42 @@ function viewExercises(){
 function viewWeight(){
   const ws = state.weights, last = ws[ws.length - 1];
   const today = dayKey(Date.now());
-  const val = state.bwInput != null ? state.bwInput : (last ? last.kg : 110);
-  const doneToday = last && last.d === today;
-  let stats = '';
-  if (ws.length){
-    const first = ws[0];
-    const cut = dayKey(Date.now() - 30 * 86400000);
-    let ref30 = null; for (const w of ws){ if (w.d <= cut) ref30 = w; }
-    if (!ref30) ref30 = first;
-    const sd = v => (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(Math.round(v * 10) / 10)) + '<small>kg</small>';
-    stats = statBlocks([['Actuel', fmt(last.kg) + '<small>kg</small>'], ['Depuis le début', ws.length > 1 ? sd(last.kg - first.kg) : '—'], ['30 jours', ws.length > 1 ? sd(last.kg - ref30.kg) : '—']]);
-  }
-  let out = `<span class="flab">${doneToday ? 'Pesée du jour enregistrée, tu peux la corriger' : 'Ta pesée du jour'}</span>
-    <div class="stp bw-stp">
-      <button class="stp-b rep" data-action="bw-dec" aria-label="Diminuer le poids">−</button>
-      <label class="stp-v"><input id="bw-in" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="${fmt(val)}" aria-label="Poids en kg"><span>kg</span></label>
-      <button class="stp-b rep" data-action="bw-inc" aria-label="Augmenter le poids">+</button>
-    </div>
-    <button class="btn primary wide" data-action="bw-save">${doneToday ? 'Mettre à jour la pesée' : 'Enregistrer la pesée'}</button>`;
-  if (!ws.length) return out + '<p class="note">Ton poids sert à calculer ta force relative et la charge réelle des tractions et des dips.</p>';
-  out += `<figure class="chart" id="bw-chart"></figure>${stats}<h2 class="h2">Pesées</h2><ul class="hist">`;
+  const date = state.bwDate || today;
+  const existing = ws.find(w => w.d === date);
+  const val = state.bwInput != null ? state.bwInput : existing ? existing.kg : (last ? last.kg : 110);
+  let out = `<div class="page">
+    <div class="wform">
+      <div class="field"><span class="flab">Poids</span>
+        <div class="stp bw-stp">
+          <button class="stp-b rep" data-action="bw-dec" aria-label="Diminuer le poids">−</button>
+          <label class="stp-v"><input id="bw-in" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="${fmt(val)}" aria-label="Poids en kg"><span>kg</span></label>
+          <button class="stp-b rep" data-action="bw-inc" aria-label="Augmenter le poids">+</button>
+        </div></div>
+      <label class="field"><span class="flab">Date</span>
+        <input class="inp inp-date" id="bw-date" type="date" value="${date}" max="${today}" aria-label="Date de la pesée"></label>
+      <button class="btn primary wide" data-action="bw-save">${existing ? 'Mettre à jour cette pesée' : 'Enregistrer la pesée'}</button>
+    </div>`;
+  if (!ws.length) return out + '<p class="note">Ton poids sert aussi à calculer ta force relative et la charge réelle des tractions et des dips.</p></div>';
+  const first = ws[0];
+  const cut = dayKey(Date.now() - 30 * 86400000);
+  let ref30 = null; for (const w of ws){ if (w.d <= cut) ref30 = w; }
+  if (!ref30) ref30 = first;
+  const sd = v => (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(Math.round(v * 10) / 10)) + '<small>kg</small>';
+  const ranges = [['30', '30 jours'], ['90', '3 mois'], ['all', 'Tout']];
+  out += `<h2 class="h2">Progression</h2>
+    <div class="seg" style="grid-template-columns:repeat(3,1fr)" role="radiogroup" aria-label="Période">${ranges.map(([id, l]) => `<button role="radio" aria-checked="${state.bwRange === id}" data-action="bw-range" data-id="${id}">${l}</button>`).join('')}</div>
+    <figure class="chart" id="bw-chart"></figure>
+    ${statBlocks([['Actuel', fmt(last.kg) + '<small>kg</small>'], ['Depuis le début', ws.length > 1 ? sd(last.kg - first.kg) : '—'], ['30 jours', ws.length > 1 ? sd(last.kg - ref30.kg) : '—']])}
+    <h2 class="h2">Pesées</h2>
+    <p class="note">Touche une pesée pour la corriger.</p>
+    <ul class="hist">`;
   for (const w of ws.slice().reverse()){
     const armed = state.confirm === 'delw' + w.d;
-    out += `<li class="wrow"><span class="hdate">${keyDate(w.d).toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'short'})}</span>
-      <span class="wkg">${fmt(w.kg)} kg</span>
+    out += `<li class="wrow ${w.d === date ? 'cur' : ''}">
+      <button class="wedit" data-action="edit-w" data-id="${w.d}"><span class="hdate">${keyDate(w.d).toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'short', year:'numeric'})}</span><span class="wkg">${fmt(w.kg)} kg</span></button>
       <button class="mini ${armed ? 'warn' : ''}" data-action="del-w" data-id="${w.d}" aria-label="Supprimer la pesée">${armed ? '?' : '×'}</button></li>`;
   }
-  return out + '</ul>';
+  return out + '</ul></div>';
 }
 
 /* Régularité */
@@ -1132,7 +1148,8 @@ function drawLine(el, pts, o){
   if (Math.min(...vs) >= 0 && lo < 0) lo = 0;
   const pl = 42, pr = 16, pt = 28, pb = 26;
   const iw = W - pl - pr, ih = H - pt - pb;
-  const X = i => pts.length === 1 ? pl + iw / 2 : pl + iw * i / (pts.length - 1);
+  const t0 = o.time ? pts[0].t : 0, t1 = o.time ? pts[pts.length - 1].t : 0;
+  const X = i => pts.length === 1 ? pl + iw / 2 : o.time && t1 > t0 ? pl + iw * (pts[i].t - t0) / (t1 - t0) : pl + iw * i / (pts.length - 1);
   const Y = v => pt + ih * (1 - (v - lo) / (hi - lo));
   const rng = hi - lo;
   const tick = v => o.tick ? o.tick(v, hi) : fmt(rng > 6 ? Math.round(v) : rng > 1 ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100);
@@ -1168,8 +1185,12 @@ function drawChart(){
   }
   const bw = document.getElementById('bw-chart');
   if (bw){
-    drawLine(bw, state.weights.map(w => ({iso:w.d, v:w.kg})), {
-      aria:`Poids de corps, ${state.weights.length} pesées`, label:v => `${fmt(v)} kg`,
+    const days = state.bwRange === '30' ? 30 : state.bwRange === '90' ? 90 : 0;
+    const from = days ? dayKey(Date.now() - days * 86400000) : '';
+    const pts = state.weights.filter(w => w.d >= from).map(w => ({iso:w.d, v:w.kg, t:keyDate(w.d).getTime()}));
+    if (!pts.length){ bw.innerHTML = '<p class="chart-empty">Aucune pesée sur cette période.</p>'; }
+    else drawLine(bw, pts, {
+      aria:`Poids de corps, ${pts.length} pesées`, label:v => `${fmt(v)} kg`, time:true,
       date:p => keyDate(p.iso).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'}), minPad:0.5,
     });
   }
@@ -1524,10 +1545,10 @@ function render(){
   top.hidden = !!PARENT[state.view];
   for (const t of top.querySelectorAll('.tab')) t.setAttribute('aria-selected', String(t.dataset.id === state.view));
   const v = document.getElementById('view');
-  const views = {session:viewSession, editor:viewEditor, picker:viewPicker, newex:viewNewEx, progress:viewProgress, programs:viewPrograms, settings:viewSettings};
+  const views = {session:viewSession, editor:viewEditor, picker:viewPicker, newex:viewNewEx, progress:viewProgress, programs:viewPrograms, settings:viewSettings, weight:viewWeight};
   v.innerHTML = (views[state.view] || viewPrograms)();
   state.flash = null; state.slide = null;
-  if (state.view === 'progress') drawChart();
+  if (state.view === 'progress' || state.view === 'weight') drawChart();
   syncWake();
   if (lastView !== state.view){ window.scrollTo(0, 0); lastView = state.view; }
   if (state.scrollEnd){ state.scrollEnd = false; window.scrollTo(0, document.body.scrollHeight); }
@@ -1670,13 +1691,17 @@ function saveWeight(){
   const el = document.getElementById('bw-in');
   const v = el ? parseNum(el.value) : NaN;
   if (isNaN(v) || v < 20 || v > 400){ if (el) el.focus(); toast('Indique un poids valide'); return false; }
-  const kg = Math.round(v * 10) / 10, d = dayKey(Date.now());
+  const dEl = document.getElementById('bw-date');
+  const d = dEl && dEl.value ? dEl.value : dayKey(Date.now());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)){ if (dEl) dEl.focus(); toast('Choisis une date valide'); return false; }
+  if (d > dayKey(Date.now())){ if (dEl) dEl.focus(); toast('La date ne peut pas être dans le futur'); return false; }
+  const kg = Math.round(v * 10) / 10;
   const i = state.weights.findIndex(w => w.d === d);
   if (i >= 0) state.weights[i].kg = kg; else state.weights.push({d, kg});
   state.weights.sort((a, b) => a.d.localeCompare(b.d));
-  state.bwInput = null;
+  state.bwInput = null; state.bwDate = null;
   persistWeights();
-  toast('Pesée enregistrée');
+  toast(i >= 0 ? 'Pesée mise à jour' : 'Pesée enregistrée');
   return true;
 }
 
@@ -1706,11 +1731,13 @@ function importData(text){
   if (d.customEx && typeof d.customEx === 'object' && !Array.isArray(d.customEx)){
     for (const [id, e] of Object.entries(d.customEx)) if (e && typeof e.name === 'string' && !EX[id]) state.customEx[id] = e;
   }
+  let progs = 0;
   if (Array.isArray(d.programs)){
     for (const p of d.programs){
       if (!validProgram(p)) continue;
       const i = state.programs.findIndex(x => x.id === p.id);
       if (i >= 0) state.programs[i] = clone(p); else state.programs.push(clone(p));
+      progs++;
     }
   }
   if (Array.isArray(d.weights)){
@@ -1723,7 +1750,10 @@ function importData(text){
   persist(); persistPrograms(); persistCustomEx(); persistWeights();
   state.progEx = null;
   render();
-  toast(added ? `${added} séance${added > 1 ? 's' : ''} importée${added > 1 ? 's' : ''}` : 'Aucune nouvelle séance dans ce fichier');
+  const msg = [];
+  if (progs) msg.push(`${progs} programme${progs > 1 ? 's' : ''} importé${progs > 1 ? 's' : ''}`);
+  if (added) msg.push(`${added} séance${added > 1 ? 's' : ''} importée${added > 1 ? 's' : ''}`);
+  toast(msg.length ? msg.join(', ') : 'Rien de nouveau dans ce fichier');
 }
 
 /* ---------- Événements ---------- */
@@ -1869,6 +1899,12 @@ document.addEventListener('click', ev => {
     case 'ptab': state.progTab = id; state.calDay = null; break;
     case 'bw-inc': case 'bw-dec': bwStep(a === 'bw-inc' ? 1 : -1); if (!prev) return; break;
     case 'bw-save': if (!saveWeight()) return; break;
+    case 'bw-range': state.bwRange = id; break;
+    case 'edit-w': {
+      const w = state.weights.find(x => x.d === id);
+      if (w){ state.bwDate = w.d; state.bwInput = w.kg; window.scrollTo(0, 0); }
+      break;
+    }
     case 'del-w':
       if (prev === 'delw' + id){ state.weights = state.weights.filter(w => w.d !== id); persistWeights(); toast('Pesée supprimée'); }
       else arm('delw' + id);
@@ -1903,6 +1939,8 @@ document.addEventListener('input', ev => {
   if (!el.matches) return;
   if (el.id === 'bw-in'){
     const v = parseNum(el.value); if (!isNaN(v)) state.bwInput = v;
+  } else if (el.id === 'bw-date'){
+    state.bwDate = el.value || null;
   } else if (el.matches('.stp-v input') && el.dataset.f && state.draft){
     const f = el.dataset.f;
     const v = f === 'w' ? parseNum(el.value) : parseInt(el.value, 10);
@@ -1926,6 +1964,8 @@ document.addEventListener('change', ev => {
   const el = ev.target;
   if (el.id === 'ex-select'){
     state.progEx = el.value; state.metric = defaultMetric(state.progEx); state.confirm = null; render();
+  } else if (el.id === 'bw-date'){
+    state.bwDate = el.value || null; state.bwInput = null; render();
   } else if (el.id === 'nx-group' && state.newEx){
     state.newEx.g = el.value;
   } else if (el.id === 'import-file' && el.files && el.files[0]){
@@ -1935,7 +1975,7 @@ document.addEventListener('change', ev => {
 });
 
 let rz;
-window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (state.view === 'progress') drawChart(); }, 120); });
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (state.view === 'progress' || state.view === 'weight') drawChart(); }, 120); });
 
 setInterval(() => {
   const d = state.draft;
